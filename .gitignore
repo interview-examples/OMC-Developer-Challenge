@@ -48,3 +48,6 @@ Dockerfile
 
 # Ignore specific files from Slim Framework
 /public/index.php
+
+# MongoDB
+/data
