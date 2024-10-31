@@ -47,7 +47,7 @@ Dockerfile
 /out/
 
 # Ignore specific files from Slim Framework
-/public/index.php
+
 
 # MongoDB
 /data
