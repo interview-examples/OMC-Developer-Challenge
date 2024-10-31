@@ -1,0 +1,50 @@
+# IntelliJ project files
+.idea/
+*.iml
+out
+gen
+
+# Composer dependencies
+/vendor/
+
+# Node modules (если используете Node.js для фронтенда)
+/node_modules/
+
+# Log files
+*.log
+
+# Runtime data
+/tmp/
+*.tmp
+
+# Docker files
+docker-compose.yml
+Dockerfile
+
+# PHPUnit coverage reports
+/coverage/
+
+# User-specific files
+*.swp
+*.swo
+
+# Cache
+/cache/
+/cache/*
+
+# Environment variables
+.env
+
+# IDE specific files
+.vscode/
+
+# Ignore all .DS_Store files, which are Mac specific hidden files
+.DS_Store
+
+# Build artifacts
+/build/
+/dist/
+/out/
+
+# Ignore specific files from Slim Framework
+/public/index.php
