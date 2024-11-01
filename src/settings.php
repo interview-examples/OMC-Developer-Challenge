@@ -2,9 +2,11 @@
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Monolog\Handler\RotatingFileHandler;
 
 $logger = new Logger('app_logger');
-$logger->pushHandler(new StreamHandler(__DIR__ . '/../logs/app.log',));;
+//$logger->pushHandler(new StreamHandler(__DIR__ . '/../logs/app.log',));;
+$logger->pushHandler(new RotatingFileHandler(__DIR__ . '/../logs/app.log', 7, 100));
 $logger->setTimezone(new \DateTimeZone('Asia/Jerusalem'));
 
 $db_access = [
