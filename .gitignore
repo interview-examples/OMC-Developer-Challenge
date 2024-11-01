@@ -52,3 +52,6 @@ Dockerfile
 
 # MongoDB
 /data
+
+# RestFOX / Postman
+/restfox
