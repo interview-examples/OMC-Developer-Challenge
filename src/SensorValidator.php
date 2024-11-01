@@ -31,7 +31,7 @@ class SensorValidator
             self::validateSensorState($sensorDetails['sensorState']);
     }
 
-    private static function validateSensorId($sensorId): bool
+    public static function validateSensorId($sensorId): bool
     {
         global $logger;
         $res = filter_var($sensorId, FILTER_VALIDATE_INT) !== false &&
@@ -40,7 +40,7 @@ class SensorValidator
         return $res;
     }
 
-    private static function validateSensorFace($sensorFace): bool
+    public static function validateSensorFace($sensorFace): bool
     {
         global $logger;
         $res=SensorFace::tryFrom($sensorFace) !== null ||
@@ -49,7 +49,7 @@ class SensorValidator
         return $res;
     }
 
-    private static function validateSensorState($sensorState): bool
+    public static function validateSensorState($sensorState): bool
     {
         global $logger;
         $res=filter_var($sensorState, FILTER_VALIDATE_BOOLEAN) !== false;

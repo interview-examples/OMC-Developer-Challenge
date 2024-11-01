@@ -23,6 +23,11 @@ class DatabaseManagement
         $this->message = '';
     }
 
+    public function getDB(): \MongoDB\Database
+    {
+        return $this->db;
+    }
+
     /**
      * Prepares databases.
      *

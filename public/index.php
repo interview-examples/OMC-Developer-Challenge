@@ -11,7 +11,8 @@ require_once __DIR__ . '/../src/settings.php';
 
 use src\DatabaseManagement as DBManagement;
 use src\SensorValidator;
-use src\tests\DatabaseManagementTest as DBMTest;
+use src\SensorsOperations;
+//use src\tests\DatabaseManagementTest as DBMTest;
 
 /**
  * @OA\Info(title="OMC Developer Challenge", version="0.1")
@@ -45,7 +46,7 @@ $app->get('/',
  *     )
  * )
  */
-$app->post('/sensor-register/',
+$app->post('/sensor-details/',
     function (Request $request, Response $response, $args)
     {
         global $logger;
@@ -55,13 +56,33 @@ $app->post('/sensor-register/',
             'sensorFace' => $data['sensorFace'],
             'sensorState' => $data['sensorState'] ?? true,
         ];
-        if (!SensorValidator::validate($sensor_details)) {
-            $logger->error("Invalid sensor details");
-            $response->getBody()->write("Invalid sensor details");
-        } else {
-            $db_manager = new DBManagement();
-            $db_manager->getSensorsListCollection()->insertOne($sensor_details);
+
+        $sensor = new SensorsOperations();
+        if ($sensor->registerSensor($sensor_details)) {
             $response->getBody()->write('Sensor ' . $data["sensorId"] . ' registered successfully.');
+        } else {
+            $response->getBody()->write("Invalid sensor details");
+        }
+
+        return $response;
+    }
+);
+
+$app->get('/sensor-details/',
+    function (Request $request, Response $response, $args)
+    {
+        $data = $request->getQueryParams();
+        $sensor_details = [
+            'sensorId' => $data['sensorId'],
+        ];
+
+        $sensor = new SensorsOperations();
+        $res = $sensor->getOneSensorDetailsById($sensor_details);
+
+        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
+        if (!is_null($res)) {
+            $response->getBody()->write('<br/>');
+            $response->getBody()->write(print_r($res, true));
         }
 
         return $response;
@@ -88,7 +109,7 @@ $app->get('/setup-database/',
 );
 
 /**
- * Test endpoints
+ * Test endpoints =============================
  */
 /**
  * @OA\Get(
@@ -107,14 +128,14 @@ $app->get('/tests/',
     }
 );
 
-$app->get('/tests/sensor-register/',
+/*$app->get('/tests/sensor-register/',
     function (Request $request, Response $response, $args) {
         $test = DBMTest::testSensorRegister(3);
 
         $response->getBody()->write($test);
         return $response;
     }
-);
+);*/
 
 $app->addErrorMiddleware(true, true, true); // Note: must be added last
 
