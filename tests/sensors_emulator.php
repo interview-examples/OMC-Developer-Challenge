@@ -1,6 +1,6 @@
 <?php
 
-$apiUrl = 'http://0.0.0.0:8080/sensor-register/';
+$apiUrl = 'http://0.0.0.0:8080/sensor-details/';
 
 for ($i = 10006; $i < 10010; $i++) {
     try {
