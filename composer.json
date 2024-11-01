@@ -4,7 +4,8 @@
         "mongodb/mongodb": "^1.10",
         "slim/psr7": "^1.7",
         "php-di/php-di": "^7.0",
-        "monolog/monolog": "^3.7"
+        "monolog/monolog": "^3.7",
+        "zircote/swagger-php": "^4.11"
     },
     "autoload": {
          "psr-4": {
