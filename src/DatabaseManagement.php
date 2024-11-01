@@ -23,6 +23,14 @@ class DatabaseManagement
         $this->message = '';
     }
 
+    /**
+     * Prepares databases.
+     *
+     * It needs to be run one time only, but before of all another!
+     *
+     * @return void
+     * @throws \Exception
+     */
     public function setupDatabase():void
     {
         global $logger;
@@ -36,11 +44,23 @@ class DatabaseManagement
     }
 
     /**
+     * Returns last status message
+     *
      * @return string
      */
     public function getMessage(): string
     {
         return $this->message;
+    }
+
+    /**
+     * Returns collection of Sensors
+     *
+     * @return \MongoDB\Collection
+     */
+    public function getSensorsListCollection(): \MongoDB\Collection
+    {
+        return $this->db->SensorsList;
     }
 
     private function createCollections():void

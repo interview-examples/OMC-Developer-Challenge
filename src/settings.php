@@ -1,5 +1,4 @@
 <?php
-
 use Monolog\Logger;
 use Monolog\Handler\RotatingFileHandler;
 
