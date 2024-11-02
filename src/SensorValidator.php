@@ -95,8 +95,9 @@ class SensorValidator
 
     private static function validateTimestamp($timestamp): bool
     {
-        $res = filter_var($timestamp, FILTER_VALIDATE_INT) !== false &&
-            $timestamp >0;
+        $res = filter_var($timestamp, FILTER_VALIDATE_INT) !== false
+            && ($timestamp <= PHP_INT_MAX)
+            && ($timestamp >= ~PHP_INT_MAX);
         self::$logger->info("validateTimestamp:", ["timestamp" => $timestamp, "result" => $res]);
 
         return $res;
