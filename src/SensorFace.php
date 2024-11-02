@@ -1,6 +1,7 @@
 <?php
+declare(strict_types=1);
 
-namespace src;
+namespace App;
 
 enum SensorFace: int {
     case North = 10;

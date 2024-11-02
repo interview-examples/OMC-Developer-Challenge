@@ -1,10 +1,12 @@
 <?php
+declare(strict_types=1);
 
-namespace src;
+namespace App;
 
 use http\Exception\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
-use src\DatabaseManagement as DBManagement;
+use App\DatabaseManagement as DBManagement;
+use App\SensorValidator;
 
 class SensorsOperations
 {

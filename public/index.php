@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -9,10 +10,10 @@ use DI\Container;
 require __DIR__ . '/../vendor/autoload.php';
 $settings = require __DIR__ . '/../src/settings.php';
 
-use src\DatabaseManagement as DBManagement;
-use src\SensorValidator;
-use src\SensorsOperations;
-//use src\tests\DatabaseManagementTest as DBMTest;
+use App\DatabaseManagement as DBManagement;
+use App\SensorValidator;
+use App\SensorsOperations;
+//use App\tests\DatabaseManagementTest as DBMTest;
 
 $container = new Container();
 $container->set('logger', $settings['logger']);
@@ -54,7 +55,7 @@ $app->get('/',
  * )
  */
 $app->post('/sensor-details/',
-    function (Request $request, Response $response, $args) use ($container)
+    function (Request $request, Response $response, $args) use ($container): Response
     {
         $logger = $container->get('logger');
         $db_access = $container->get('db_access');

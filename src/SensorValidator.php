@@ -1,9 +1,9 @@
 <?php
+declare(strict_types=1);
 
-namespace src;
+namespace App;
 
 use Psr\Container\ContainerInterface;
-use src\SensorFace;
 
 class SensorValidator
 {
