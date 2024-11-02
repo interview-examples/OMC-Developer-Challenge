@@ -29,7 +29,7 @@ class SensorsOperations
     public function registerSensor(array $sensor_params): ?bool
     {
         $res = null;
-        if (!SensorValidator::validate($sensor_params)) {
+        if (!SensorValidator::validateSensorDetails($sensor_params)) {
             $this->logger->error("Invalid sensor details");
         } else {
             try {
@@ -50,7 +50,7 @@ class SensorsOperations
     public function updateSensor(array $sensor_params): ?bool
     {
         $res = null;
-        if (!SensorValidator::validate($sensor_params)) {
+        if (!SensorValidator::validateSensorDetails($sensor_params)) {
             $this->logger->error("Invalid sensor details");
         } else {
             try {
@@ -108,4 +108,5 @@ class SensorsOperations
         }
         throw new InvalidArgumentException('Sensor ID is not set correctly');
     }
+
 }
