@@ -11,8 +11,10 @@ require __DIR__ . '/../vendor/autoload.php';
 $settings = require __DIR__ . '/../src/settings.php';
 
 use App\DatabaseManagement as DBManagement;
+use \App\Sensors\SensorFace;
 use App\Sensors\SensorValidator;
 use App\Sensors\SensorsOperations;
+use \App\Processing\DataAggregation;
 
 $container = new Container();
 $container->set('logger', $settings['logger']);
@@ -146,6 +148,30 @@ $app->get('/sensor-details/',
     }
 );
 
+$app->get('/sensor-data/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+        $sensor_details = [
+            'sensorId' => $data['sensorId'],
+        ];
+
+        $sensor = new SensorsOperations($db_access, $logger);
+        $res = $sensor->getOneSensorDataById($sensor_details);
+
+        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
+        if (!is_null($res)) {
+            $response->getBody()->write('<br/>');
+            $response->getBody()->write(print_r($res, true));
+        }
+
+        return $response;
+    }
+);
+
 /**
  * @OA\Get(
  *     path="/setup-database/",
@@ -193,6 +219,48 @@ $app->post('/add-temperature/',
         } else {
             $response->getBody()->write("Invalid temperature data or Sensor ID does not exist");
             $response = $response->withStatus(400);
+        }
+
+        return $response;
+    }
+);
+
+$app->get('/aggregate-by-sensor/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $avg_temp = $sensor->aggregateDataSensorByID((int)$data['sensorId'], (int)$data['start_from'], (int)$data['period']);
+
+        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
+        if (!is_null($avg_temp)) {
+            $response->getBody()->write('<br/>');
+            $response->getBody()->write(number_format($avg_temp, 2));
+        }
+
+        return $response;
+    }
+);
+
+$app->get('/aggregate-by-face/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $avg_temp = $sensor->aggregateDataSensorsByFace((int)$data['sensorFace'], (int)$data['start_from'], (int)$data['period']);
+
+        $response->getBody()->write('Face ' . strtoupper(SensorFace::from((int)$data["sensorFace"])->name). ':');
+        if (!is_null($avg_temp)) {
+            $response->getBody()->write('<br/>');
+            $response->getBody()->write(number_format($avg_temp, 2));
         }
 
         return $response;
@@ -265,15 +333,6 @@ $app->delete('/tests/remove-all-temperatures/',
         return $response->withHeader('Content-Type', 'application/json');
     }
 );
-
-/*$app->get('/tests/sensor-register/',
-    function (Request $request, Response $response, $args) {
-        $test = DBMTest::testSensorRegister(3);
-
-        $response->getBody()->write($test);
-        return $response;
-    }
-);*/
 
 $app->addErrorMiddleware(true, true, true); // Note: must be added last
 
