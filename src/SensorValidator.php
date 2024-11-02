@@ -14,7 +14,7 @@ class SensorValidator
         self::$logger = $container->get('logger');
     }
 
-    public static function validate(&$sensorDetails): bool
+    public static function validateSensorDetails(&$sensorDetails): bool
     {
         self::$logger->debug("SensorValidator::validate()");
         self::$logger->info("input", ["sensorDetails" => $sensorDetails]);
