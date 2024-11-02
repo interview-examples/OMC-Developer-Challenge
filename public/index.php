@@ -169,6 +169,36 @@ $app->get('/setup-database/',
     }
 );
 
+$app->post('/add-temperature/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = json_decode($request->getBody()->getContents(), true);
+        if (is_null($data)) {
+            $response->getBody()->write("Invalid temperature data");
+            return $response->withStatus(400);
+        }
+
+        $temperature_data = [
+            'sensorId' => $data['sensorId'],
+            'timestamp' => $data['timestamp'],
+            'temperature' => $data['temperature'],
+        ];
+
+        $sensor = new SensorsOperations($db_access, $logger);
+        if ($sensor->addTemperatureData($temperature_data)) {
+            $response->getBody()->write('Temperature data added successfully.');
+        } else {
+            $response->getBody()->write("Invalid temperature data or Sensor ID does not exist");
+            $response = $response->withStatus(400);
+        }
+
+        return $response;
+    }
+);
+
 /**
  * Test endpoints =============================
  */
@@ -177,7 +207,7 @@ $app->get('/setup-database/',
  *     path="/",
  *     @OA\Response(
  *         response="200",
- *         description="Welcome screen"
+ *         description="Test area Welcome screen"
  *     )
  * )
  */
@@ -214,7 +244,23 @@ $app->delete('/tests/remove-all-sensors/',
         $result = $db_manager->getSensorsListCollection()->deleteMany([]);
         $response->getBody()->write(json_encode([
             'deletedCount' => $result->getDeletedCount()
-        ]));
+        ], JSON_THROW_ON_ERROR));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+);
+
+$app->delete('/tests/remove-all-temperatures/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $db_manager = new DBManagement($db_access, $logger);
+        $result = $db_manager->getTemperaturesCollection()->deleteMany([]);
+        $response->getBody()->write(json_encode([
+            'deletedCount' => $result->getDeletedCount()
+        ], JSON_THROW_ON_ERROR));
 
         return $response->withHeader('Content-Type', 'application/json');
     }

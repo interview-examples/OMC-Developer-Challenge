@@ -46,7 +46,8 @@ class DatabaseManagement
     {
         try {
             $this->createCollections();
-            $this->createIndexes();
+            $this->createSensorsListIndexes();
+            $this->createTemperatureIndexes();
         } catch (\Exception $e) {
             die('Error (' . $e->getCode() . ') in createCollections method: ' . $e->getMessage());
         }
@@ -70,6 +71,11 @@ class DatabaseManagement
     public function getSensorsListCollection(): \MongoDB\Collection
     {
         return $this->db->SensorsList;
+    }
+
+    public function getTemperaturesCollection()
+    {
+        return $this->db->Temperatures;
     }
 
     /**
@@ -100,19 +106,42 @@ class DatabaseManagement
     /**
      * @throws \Exception
      */
-    private function createIndexes():void
+    private function createTemperatureIndexes():void
     {
         global $logger;
 
         try {
+            $this->db->Temperatures->dropIndexes();
+            $logger->info('Dropped all indexes in Temperatures collection');
+
             $this->db->Temperatures->createIndex(['timestamp' => 1], ['expireAfterSeconds' => 86400]);
-            $logger->info('Created index on timestamp');
+            $logger->debug('Created index on timestamp');
+
             $this->db->Temperatures->createIndex(['sensorId' => 1]);
-            $logger->info('Created index on sensorId');
-            $this->db->Temperatures->createIndex(['sensorId' => 1, 'timestamp' => 1]);
-            $logger->info('Created composite index on sensorId and timestamp');
+            $logger->debug('Created index on sensorId');
+
+            $this->db->Temperatures->createIndex(['sensorId' => 1, 'timestamp' => 1], ["unique" => true]);
+            $logger->debug('Created composite index on sensorId and timestamp');
+
+        } catch (\Exception $e) {
+            $logger->error('Error in createIndexes method', ['exception' => $e]);
+            throw $e;
+        }
+    }
+
+    private function createSensorsListIndexes():void
+    {
+        global $logger;
+
+        try {
+            $this->db->Temperatures->dropIndexes();
+            $logger->info('Dropped all indexes in SensorsList collection');
+
             $this->db->SensorsList->createIndex(['sensorId' => 1], ["unique" => true]);
-            $logger->info('Created unique index on _id');
+            $logger->debug('Created unique index on sensorId');
+
+            $this->db->SensorsList->createIndex(['sensorFace' => 1]);
+            $logger->debug('Created index on sensorFace');
         } catch (\Exception $e) {
             $logger->error('Error in createIndexes method', ['exception' => $e]);
             throw $e;

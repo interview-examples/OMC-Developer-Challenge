@@ -109,4 +109,28 @@ class SensorsOperations
         throw new InvalidArgumentException('Sensor ID is not set correctly');
     }
 
+    public function addTemperatureData(array $temperature_data): ?bool
+    {
+        $res = null;
+        if (!SensorValidator::validateTemperatureData($temperature_data)) {
+            $this->logger->error("Invalid temperature data");
+            $this->logger->info("temperature data", $temperature_data);
+        } else {
+            try {
+                $sensor = $this->db_manager->getSensorsListCollection()->findOne(
+                    ['sensorId' => $temperature_data['sensorId']]
+                );
+                if ($sensor) {
+                    $this->db_manager->getTemperaturesCollection()->insertOne($temperature_data);
+                    $res = true;
+                } else {
+                    $this->logger->warning("Sensor ID does not exist");
+                }
+            } catch (\Exception $e) {
+                $this->logger->error("Error in addTemperatureData method: " . $e->getMessage());
+            }
+        }
+        return $res;
+    }
+
 }
