@@ -1,40 +1,82 @@
 <?php
+declare(strict_types=1);
 
-$apiUrl = 'http://0.0.0.0:8080/sensor-details/';
+const FIRST_SENSOR_ID = 10000;
+const LAST_SENSOR_ID = 10050;
+const SIMULATION_TIME_IN_SECS = 180;
+const SENSOR_FAILURE_RATE = 0.1;
+const SENSOR_ERROR_RATE = 0.05;
 
-for ($i = 10006; $i < 10010; $i++) {
-    try {
-/*        $sensorData = [
-            'sensorId' => $i,
-            'timestamp' => date('Y-m-d H:i:s'),
-            'temperature' => array_rand([random_int(-10, 40), random_int(-20, 50), random_int(50, 90), 'test']),
-            'sensorFace' => array_rand(['NORTH' => 10, 'West' =>20, 'East' =>30, '40' =>40, 40, 'NORTH' => 'north', 'tzafon'], 1),
-            'sensorState' => array_rand([true, false, 'bug']),
-        ];*/
-        $sensorData = [
-            'sensorId' => $i,
-            'sensorFace' => 10,
-            'sensorState' => true,
-        ];
-    } catch (\Random\RandomException $e) {
-        throw $e;
-    }
+const SERVICE_URL = 'http://0.0.0.0:8080';
 
-    $options = [
-        'http' => [
-            'header' => "Content-type: application/x-www-form-urlencoded\r\n",
-            'method' => 'POST',
-            'content' => http_build_query($sensorData),
-        ],
-    ];
+function registerSensor($sensor_id): false|string
+{
+    $url = SERVICE_URL . '/sensor-details/';
+    $data = json_encode(['sensorId' => $sensor_id, 'sensorFace' => array_rand([10 => 10, 20=>20, 30=>30, 40=>40]), 'sensorState' => true], JSON_THROW_ON_ERROR);
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+    $result = curl_exec($ch);
+    curl_close($ch);
 
-    $context = stream_context_create($options);
-    $result = file_get_contents($apiUrl, false, $context);
+    return $result;
 
-    if ($result === FALSE) {
-        die('Error sending sensor data');
-    }
-
-    echo "Sensor $i data sent.\n";
 }
 
+function sendSensorData($sensor_id, $temperature): false|string
+{
+    $url = SERVICE_URL . '/add-temperature/';
+    $data = json_encode(
+        ['sensorId' => $sensor_id, 'temperature' => $temperature, 'timestamp' => time()],
+        JSON_THROW_ON_ERROR
+    );
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+    $result = curl_exec($ch);
+    curl_close($ch);
+
+    return $result;
+}
+
+echo "Emulator started at " . date('Y-m-d H:i:s'); echo PHP_EOL; echo "<br/>";
+ob_flush();
+flush();
+for ($i = FIRST_SENSOR_ID; $i <= LAST_SENSOR_ID; $i++) {
+    $result = registerSensor($i);
+    echo "*";
+    ob_flush();
+    flush();
+}
+
+echo PHP_EOL; echo PHP_EOL; echo "<br/>";
+
+for ($t = 0; $t < SIMULATION_TIME_IN_SECS; $t++) {
+    for ($i = FIRST_SENSOR_ID; $i <= LAST_SENSOR_ID; $i++) {
+        if (random_int(0, 100) / 100 < SENSOR_FAILURE_RATE) {
+            echo "o";
+            ob_flush();
+            flush();
+            continue;
+        }
+
+        if (random_int(0, 100) / 100 < SENSOR_ERROR_RATE) {
+            $temperature = random_int(-100, 100) / 10;
+        } else {
+            $temperature = random_int(-50, 50) / 10;
+        }
+
+        $result = sendSensorData($i, $temperature);
+        echo "+";
+        ob_flush();
+        flush();
+    }
+    usleep(random_int(100, 10000) * 100);
+}
+echo PHP_EOL; echo "<br/>";
+echo "Emulator stopped at " . date('Y-m-d H:i:s');
+echo PHP_EOL;

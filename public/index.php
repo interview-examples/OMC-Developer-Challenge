@@ -11,9 +11,8 @@ require __DIR__ . '/../vendor/autoload.php';
 $settings = require __DIR__ . '/../src/settings.php';
 
 use App\DatabaseManagement as DBManagement;
-use App\SensorValidator;
-use App\SensorsOperations;
-//use App\tests\DatabaseManagementTest as DBMTest;
+use App\Sensors\SensorValidator;
+use App\Sensors\SensorsOperations;
 
 $container = new Container();
 $container->set('logger', $settings['logger']);

@@ -1,12 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace App;
+namespace App\Sensors;
 
 use http\Exception\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
-use App\DatabaseManagement as DBManagement;
-use App\SensorValidator;
+use App\DatabaseManagement;
 
 class SensorsOperations
 {
@@ -20,7 +19,7 @@ class SensorsOperations
     {
         $this->logger = $logger;
 
-        $this->db_manager = new DBManagement($db_access, $logger);
+        $this->db_manager = new DatabaseManagement($db_access, $logger);
     }
 
     /**
@@ -84,7 +83,7 @@ class SensorsOperations
         ) {
             $sensor = $this->db_manager->getSensorsListCollection()->findOne(
                 [
-                    'sensorId' => $sensor_params['sensorId']
+                    'sensorId' => (int)$sensor_params['sensorId']
                 ]
             );
             $sensor_details = null;

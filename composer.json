@@ -9,8 +9,9 @@
     },
     "autoload": {
          "psr-4": {
-              "src\\": "src/",
-              "App\\": "src/"
+           "App\\": "src/",
+           "App\\Sensors\\": "src/sensors/",
+           "App\\Processing\\": "src/processing/"
          }
     },
     "require-dev": {
