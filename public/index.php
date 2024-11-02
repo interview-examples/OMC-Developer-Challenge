@@ -7,26 +7,19 @@ use Slim\Factory\AppFactory;
 use DI\Container;
 
 require __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../src/settings.php';
+$settings = require __DIR__ . '/../src/settings.php';
 
 use src\DatabaseManagement as DBManagement;
+use src\SensorValidator;
 use src\SensorsOperations;
 //use src\tests\DatabaseManagementTest as DBMTest;
 
 $container = new Container();
+$container->set('logger', $settings['logger']);
+$container->set('db_access', $settings['db_access']);
 AppFactory::setContainer($container);
 
-$container->set('logger', function() {
-    return new \Monolog\Logger('app_logger');
-});
-
-$container->set('db_access', function() {
-    return [
-        'host' => 'localhost',
-        'port' => '27017',
-        'database' => 'sensors_db'
-    ];
-});
+SensorValidator::setContainer($container);
 
 /**
  * @OA\Info(title="OMC Developer Challenge", version="0.1")
