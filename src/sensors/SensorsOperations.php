@@ -134,4 +134,37 @@ class SensorsOperations
         return $res;
     }
 
+    public function getOneSensorDataById(array $sensor_params)
+    {
+        if (array_key_exists('sensorId', $sensor_params) &&
+            SensorValidator::validateSensorId($sensor_params['sensorId'])
+        ) {
+            $sensor_data = $this->db_manager->getTemperaturesCollection()->find(
+                [
+                    'sensorId' => (int)$sensor_params['sensorId']
+                ],
+                [
+                    'sort' => ['timestamp' => -1]
+                ]
+            )->toArray();
+
+            $sensor_details = [];
+            foreach ($sensor_data as $item) {
+                $sensor_details[] = [
+                    'timestamp' => $item['timestamp'],
+                    'temperature' => $item['temperature'],
+                ];
+            }
+            return $sensor_details;
+        }
+        throw new InvalidArgumentException('Sensor ID is not set correctly');
+    }
+
+    public function getIdBySensorId(int $sensor_id)
+    {
+        $sensor = $this->db_manager->getSensorsListCollection()->findOne(['sensorId' => $sensor_id]);
+
+        return $sensor->_id;
+    }
+
 }
