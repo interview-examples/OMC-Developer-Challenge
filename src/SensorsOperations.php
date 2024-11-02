@@ -1,29 +1,32 @@
 <?php
 
 namespace src;
+
 use http\Exception\InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use src\DatabaseManagement as DBManagement;
-use src\SensorValidator;
 
 class SensorsOperations
 {
-    private $db_manager;
-    private $logger;
+    private DatabaseManagement $db_manager;
+    private LoggerInterface $logger;
 
-    public function __construct()
+    /**
+     * @throws \Exception
+     */
+    public function __construct(array $db_access, LoggerInterface $logger)
     {
-        global $logger;
         $this->logger = $logger;
 
-        $this->db_manager = new DBManagement();
+        $this->db_manager = new DBManagement($db_access, $logger);
     }
 
     /**
      * Registers (or rewrite existed)
      * @param array $sensor_params
-     * @return bool
+     * @return bool | null
      */
-    public function registerSensor(array $sensor_params):?bool
+    public function registerSensor(array $sensor_params): ?bool
     {
         if (!SensorValidator::validate($sensor_params)) {
             $this->logger->error("Invalid sensor details");
@@ -46,7 +49,7 @@ class SensorsOperations
         if (array_key_exists('sensorId', $sensor_params) &&
             SensorValidator::validateSensorId($sensor_params['sensorId'])
         ) {
-            $sensor = $this->db_manager->getDB()->SensorsList->findOne(
+            $sensor = $this->db_manager->getSensorsListCollection()->findOne(
                 [
                     'sensorId' => $sensor_params['sensorId']
                 ]
@@ -74,5 +77,4 @@ class SensorsOperations
         }
         throw new InvalidArgumentException('Sensor ID is not set correctly');
     }
-
 }
