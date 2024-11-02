@@ -1,13 +1,14 @@
 <?php
+declare(strict_types=1);
 
-namespace src;
+namespace App;
 
-use MongoDB\Client;
+use MongoDB\Client as MongoClient;
 use Psr\Log\LoggerInterface;
 
 class DatabaseManagement
 {
-    private Client $client;
+    private MongoClient $client;
     private \MongoDB\Database $db;
     private string $message;
     private LoggerInterface $logger;
@@ -24,7 +25,7 @@ class DatabaseManagement
             throw new \RuntimeException('Database access configuration is not properly set.');
         }
 
-        $this->client = new Client($db_access['host'] . $db_access['port']);
+        $this->client = new MongoClient($db_access['host'] . $db_access['port']);
         $this->db = $this->client->selectDatabase($db_access['database']);
         $this->message = '';
         $this->logger = $logger;
@@ -73,7 +74,7 @@ class DatabaseManagement
         return $this->db->SensorsList;
     }
 
-    public function getTemperaturesCollection()
+    public function getTemperaturesCollection():\MongoDB\Collection
     {
         return $this->db->Temperatures;
     }

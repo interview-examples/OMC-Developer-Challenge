@@ -1,6 +1,6 @@
 <?php
 
-namespace src\tests;
+namespace App\tests;
 
 class DatabaseManagementTest
 {
