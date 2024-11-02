@@ -4,15 +4,29 @@ use OpenApi\Attributes as OA;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
+use DI\Container;
 
 require __DIR__ . '/../vendor/autoload.php';
-
 require_once __DIR__ . '/../src/settings.php';
 
 use src\DatabaseManagement as DBManagement;
-use src\SensorValidator;
 use src\SensorsOperations;
 //use src\tests\DatabaseManagementTest as DBMTest;
+
+$container = new Container();
+AppFactory::setContainer($container);
+
+$container->set('logger', function() {
+    return new \Monolog\Logger('app_logger');
+});
+
+$container->set('db_access', function() {
+    return [
+        'host' => 'localhost',
+        'port' => '27017',
+        'database' => 'sensors_db'
+    ];
+});
 
 /**
  * @OA\Info(title="OMC Developer Challenge", version="0.1")
@@ -47,9 +61,11 @@ $app->get('/',
  * )
  */
 $app->post('/sensor-details/',
-    function (Request $request, Response $response, $args)
+    function (Request $request, Response $response, $args) use ($container)
     {
-        global $logger;
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
         $data = $request->getParsedBody();
         $sensor_details = [
             'sensorId' => $data['sensorId'],
@@ -57,7 +73,7 @@ $app->post('/sensor-details/',
             'sensorState' => $data['sensorState'] ?? true,
         ];
 
-        $sensor = new SensorsOperations();
+        $sensor = new SensorsOperations($db_access, $logger);
         if ($sensor->registerSensor($sensor_details)) {
             $response->getBody()->write('Sensor ' . $data["sensorId"] . ' registered successfully.');
         } else {
@@ -69,14 +85,17 @@ $app->post('/sensor-details/',
 );
 
 $app->get('/sensor-details/',
-    function (Request $request, Response $response, $args)
+    function (Request $request, Response $response, $args) use ($container)
     {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
         $data = $request->getQueryParams();
         $sensor_details = [
             'sensorId' => $data['sensorId'],
         ];
 
-        $sensor = new SensorsOperations();
+        $sensor = new SensorsOperations($db_access, $logger);
         $res = $sensor->getOneSensorDetailsById($sensor_details);
 
         $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
@@ -99,8 +118,12 @@ $app->get('/sensor-details/',
  * )
  */
 $app->get('/setup-database/',
-    function (Request $request, Response $response, $args) {
-        $db_manager = new DBManagement();
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $db_manager = new DBManagement($db_access, $logger);
         $db_manager->setupDatabase();
         $response->getBody()->write($db_manager->getMessage());
 
