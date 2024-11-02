@@ -111,7 +111,7 @@ class DatabaseManagement
             $logger->info('Created index on sensorId');
             $this->db->Temperatures->createIndex(['sensorId' => 1, 'timestamp' => 1]);
             $logger->info('Created composite index on sensorId and timestamp');
-            $this->db->SensorsList->createIndex(['_id' => 1]);
+            $this->db->SensorsList->createIndex(['sensorId' => 1], ["unique" => true]);
             $logger->info('Created unique index on _id');
         } catch (\Exception $e) {
             $logger->error('Error in createIndexes method', ['exception' => $e]);
