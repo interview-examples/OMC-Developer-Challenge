@@ -144,6 +144,37 @@ $app->get('/tests/',
     }
 );
 
+$app->get('/tests/get-sensors/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $db_manager = new DBManagement($db_access, $logger);
+        $cursor = $db_manager->getSensorsListCollection()->find();
+        $sensors = iterator_to_array($cursor);
+        $response->getBody()->write(json_encode($sensors));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+);
+
+$app->delete('/tests/remove-all-sensors/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $db_manager = new DBManagement($db_access, $logger);
+        $result = $db_manager->getSensorsListCollection()->deleteMany([]);
+        $response->getBody()->write(json_encode([
+            'deletedCount' => $result->getDeletedCount()
+        ]));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+);
+
 /*$app->get('/tests/sensor-register/',
     function (Request $request, Response $response, $args) {
         $test = DBMTest::testSensorRegister(3);
