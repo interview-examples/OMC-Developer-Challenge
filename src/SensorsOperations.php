@@ -22,18 +22,49 @@ class SensorsOperations
     }
 
     /**
-     * Registers (or rewrite existed)
+     * Registers new sensor
      * @param array $sensor_params
      * @return bool | null
      */
     public function registerSensor(array $sensor_params): ?bool
     {
+        $res = null;
         if (!SensorValidator::validate($sensor_params)) {
             $this->logger->error("Invalid sensor details");
-            $res = null;
         } else {
-            $this->db_manager->getSensorsListCollection()->insertOne($sensor_params);
-            $res = true;
+            try {
+                $this->db_manager->getSensorsListCollection()->insertOne($sensor_params);
+                $res = true;
+            } catch (\Exception $e) {
+                $this->logger->error("Error in registerSensor method: " . $e->getMessage());
+            }
+        }
+        return $res;
+    }
+
+    /**
+     * Updates existed sensor
+     * @param array $sensor_params
+     * @return bool | null
+     */
+    public function updateSensor(array $sensor_params): ?bool
+    {
+        $res = null;
+        if (!SensorValidator::validate($sensor_params)) {
+            $this->logger->error("Invalid sensor details");
+        } else {
+            try {
+                $this->db_manager->getSensorsListCollection()->deleteOne(
+                    [
+                        'sensorId' => $sensor_params['sensorId']
+                    ]
+                );
+                $this->db_manager->getSensorsListCollection()->insertOne($sensor_params);
+
+                $res = true;
+            } catch (\Exception $e) {
+                $this->logger->error("Error in updateSensor method: " . $e->getMessage());
+            }
         }
         return $res;
     }
