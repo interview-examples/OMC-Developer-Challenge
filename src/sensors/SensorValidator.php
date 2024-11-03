@@ -69,7 +69,7 @@ class SensorValidator
 
     public static function validateTemperatureData(array $temperature_data)
     {
-        self::$logger->info("SensorValidator::validateTemperatureData():input", ["sensorDetails" => $temperature_data]);
+        self::$logger->debug("SensorValidator::validateTemperatureData():input", ["sensorDetails" => $temperature_data]);
 
         if (!is_array($temperature_data)) {
             $temperature_data = [];
