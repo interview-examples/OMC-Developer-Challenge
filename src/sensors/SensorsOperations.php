@@ -62,13 +62,19 @@ class SensorsOperations
                     'sensorId' => (int)$sensor_params['sensorId']
                 ]
             );
-            return [
-                'sensorId' => $sensor->sensorId,
-                'sensorFace' => $sensor->sensorFace,
-                'sensorState' => $sensor->sensorState ? 'true' : 'false',
-                'isSensorOutlier' => $sensor->isSensorOutlier ? 'true' : 'false',
-                'sensorLastUpdate' => $sensor->sensorLastUpdate ?? 0,
-            ];
+            if (!is_null($sensor)) {
+                $res = [
+                    'sensorId' => $sensor->sensorId,
+                    'sensorFace' => $sensor->sensorFace,
+                    'sensorState' => $sensor->sensorState ? 'true' : 'false',
+                    'isSensorOutlier' => $sensor->isSensorOutlier ? 'true' : 'false',
+                    'sensorLastUpdate' => $sensor->sensorLastUpdate ?? 0,
+                ];
+            } else {
+                $res = null;
+                $this->logger->warning("Sensor ID does not exist");
+            }
+            return $res;
         }
         throw new InvalidArgumentException('Sensor ID is not set correctly');
     }
@@ -84,8 +90,8 @@ class SensorsOperations
                     ['sensorId' => $temperature_data['sensorId']]
                 );
                 if ($sensor) {
-                    if ($sensor->sensorState) {
-                        $this->logger->info("Sensor " . $temperature_data['sensorId'] . " is disabled");
+                    if ($sensor->sensorState === false || $sensor->isSensorOutlier === 0) {
+                        $this->logger->info("Sensor " . $temperature_data['sensorId'] . " is disabled. Value of sensorState: " . $sensor->sensorState);
                         $res = false;
                     } else {
                         $temperature_data['timestamp'] = time();
@@ -105,7 +111,7 @@ class SensorsOperations
 
     private function refreshSensorLastUpdate(int $sensor_id, int $timestamp = 0): void
     {
-        $this->db->SensorsList->updateOne(
+        $this->db_manager->getSensorsListCollection()->updateOne(
             ['sensorId' => $sensor_id],
             ['$set' => ['lastUpdate' => $timestamp === 0 ? time() : $timestamp]]
         );
