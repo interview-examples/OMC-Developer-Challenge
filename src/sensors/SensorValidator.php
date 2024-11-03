@@ -22,9 +22,6 @@ class SensorValidator
         $required_keys = [
             'sensorId' => null,
             'sensorFace' => null,
-            //'sensorState' => false,
-            //'isSensorOutlier' => false,
-            //'sensorLastUpdate' => null,
         ];
         foreach ($required_keys as $key => $default_value) {
             if (!isset($sensor_details[$key])) {
@@ -79,7 +76,6 @@ class SensorValidator
         }
         $required_keys = [
             'sensorId' => null,
-            'timestamp' => null,
             'temperature' => null,
         ];
         foreach ($required_keys as $key => $default_value) {
@@ -91,7 +87,6 @@ class SensorValidator
         $temperature_data = array_intersect_key($temperature_data, $required_keys);
 
         return self::validateSensorId($temperature_data['sensorId']) &&
-            self::validateTimestamp($temperature_data['timestamp']) &&
             self::validateTemperature($temperature_data['temperature']);
     }
 

@@ -77,8 +77,7 @@ class SensorsOperations
     {
         $res = null;
         if (!SensorValidator::validateTemperatureData($temperature_data)) {
-            $this->logger->error("Invalid temperature data");
-            $this->logger->info("temperature data", $temperature_data);
+            $this->logger->error("Invalid temperature data", $temperature_data);
         } else {
             try {
                 $sensor = $this->db_manager->getSensorsListCollection()->findOne(
@@ -89,8 +88,9 @@ class SensorsOperations
                         $this->logger->info("Sensor " . $temperature_data['sensorId'] . " is disabled");
                         $res = false;
                     } else {
+                        $temperature_data['timestamp'] = time();
                         $this->db_manager->getTemperaturesCollection()->insertOne($temperature_data);
-                        $this->refreshSensorLastUpdate($temperature_data['sensorId']);
+                        $this->refreshSensorLastUpdate($temperature_data['sensorId'], $temperature_data['timestamp']);
                         $res = true;
                     }
                 } else {
@@ -103,11 +103,11 @@ class SensorsOperations
         return $res;
     }
 
-    private function refreshSensorLastUpdate(int $sensor_id): void
+    private function refreshSensorLastUpdate(int $sensor_id, int $timestamp = 0): void
     {
         $this->db->SensorsList->updateOne(
             ['sensorId' => $sensor_id],
-            ['$set' => ['lastUpdate' => time()]]
+            ['$set' => ['lastUpdate' => $timestamp === 0 ? time() : $timestamp]]
         );
     }
 
