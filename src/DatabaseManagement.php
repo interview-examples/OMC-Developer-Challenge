@@ -47,14 +47,6 @@ class DatabaseManagement
     {
         try {
             $this->createCollections();
-            $this->db->SensorsList->updateMany(
-                ['isSensorOutlier' => ['$exists' => false]],
-                ['$set' => [
-                    'sensorState' => true,
-                    'isSensorOutlier' => false,
-                    'sensorLastUpdate' => 0
-                ]],
-            );
             $this->createSensorsListIndexes();
             $this->createTemperatureIndexes();
         } catch (\Exception $e) {
