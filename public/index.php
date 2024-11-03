@@ -286,6 +286,32 @@ $app->get('/faulty-sensors/',
     }
 );
 
+$app->get('/deviation-sensors/',
+    function (Request $request, Response $response, $args) use ($container) {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+        $start_from = (int)($data['start_from'] ?? 0);
+        $period = (int)($data['period'] ?? 0);
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $sensor_face_tmp = (int)($data['sensorFace'] ?? 0);
+        $sensor_face_value = SensorFace::tryfrom($sensor_face_tmp);
+        if (is_null($sensor_face_value)) {
+            $response->getBody()->write("Invalid sensor face");
+            $response->withStatus(400);
+        } else {
+            $res = $sensor->createListOfSensorsWithDeviation($sensor_face_value, $start_from, $period);
+
+            $response->getBody()->write('Face ' . strtoupper(getSensorFaceName($sensor_face_tmp)). ':');
+            $response->getBody()->write(json_encode($res));
+        }
+
+        return $response;
+    }
+);
+
 /**
  * Test endpoints =============================
  */
