@@ -131,12 +131,13 @@ $app->get('/sensor-details/',
         $db_access = $container->get('db_access');
 
         $data = $request->getQueryParams();
+
         $sensor_details = [
             'sensorId' => $data['sensorId'],
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
-        $res = $sensor->getOneSensorDetailsById($sensor_details);
+        $res = $sensor->getSensorDetailsById($sensor_details);
 
         $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
         if (!is_null($res)) {

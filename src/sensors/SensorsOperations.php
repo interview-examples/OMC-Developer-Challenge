@@ -76,7 +76,7 @@ class SensorsOperations
      * @param array $sensor_params
      * @return array|null - sensor data is sensorId, sensorFace, sensorState
      */
-    public function getOneSensorDetailsById(array $sensor_params): ?array
+    public function getSensorDetailsById(array $sensor_params): ?array
     {
         if (array_key_exists('sensorId', $sensor_params) &&
             SensorValidator::validateSensorId($sensor_params['sensorId'])
@@ -86,26 +86,13 @@ class SensorsOperations
                     'sensorId' => (int)$sensor_params['sensorId']
                 ]
             );
-            $sensor_details = null;
-            switch (gettype($sensor)) {
-                case 'object':
-                    $sensor_details = [
-                        'sensorId' => $sensor->sensorId,
-                        'sensorFace' => $sensor->sensorFace,
-                        'sensorState' => $sensor->sensorState,
-                    ];
-                    break;
-                case 'array':
-                    $sensor_details = [
-                        'sensorId' => $sensor['sensorId'],
-                        'sensorFace' => $sensor['sensorFace'],
-                        'sensorState' => $sensor['sensorState'],
-                    ];
-                    break;
-                case 'NULL':
-                    break;
-            }
-            return $sensor_details;
+            return [
+                'sensorId' => $sensor->sensorId,
+                'sensorFace' => $sensor->sensorFace,
+                'sensorState' => $sensor->sensorState ? 'true' : 'false',
+                'isSensorOutlier' => $sensor->isSensorOutlier ? 'true' : 'false',
+                'sensorLastUpdate' => $sensor->sensorLastUpdate ?? 0,
+            ];
         }
         throw new InvalidArgumentException('Sensor ID is not set correctly');
     }
