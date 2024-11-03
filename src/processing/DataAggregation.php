@@ -11,6 +11,7 @@ use App\DatabaseManagement;
 
 class DataAggregation
 {
+    public const float DEVIATION_LIMIT = 0.2;
     private DatabaseManagement $db_manager;
     private LoggerInterface $logger;
     private SensorsOperations $sensors_operations;
@@ -79,13 +80,39 @@ class DataAggregation
             ]
         );
         $tmp = iterator_to_array($cursor);
-        $this->logger->debug('Aggregating data for sensor ', $tmp);
+
         return $tmp[0]['avg_temp'] ?? null;
     }
 
     public function createListOfSensorsWithDeviation(SensorFace $sensor_face, int $period_starts_from, int $period)
     {
+        $face_avg_temp = $this->aggregateDataSensorsByFace($sensor_face, $period_starts_from, $period);
+        $sensor_faces_cursor = $this->db_manager->getSensorsListCollection()->find(
+            [
+                'sensorFace' => $sensor_face->value,
+                'sensorState' => SensorsOperations::SENSOR_STATE_OK,
+            ],
+            ['projection' => ['sensorId' => 1]]);
+        $sensor_faces = array_map(fn($doc) => $doc['sensorId'], iterator_to_array($sensor_faces_cursor));
+        $deviated_sensors = array_map(
+            fn($sensor_id) => $this->aggregateDataSensorByID($sensor_id, $period_starts_from, $period),
+            $sensor_faces
+        );
+        $deviated_sensors = array_filter(
+            $deviated_sensors,
+            static fn($avg) => $avg !== null && abs(($avg - $face_avg_temp) / $face_avg_temp) > DataAggregation::DEVIATION_LIMIT
+        );
+        $sensor_ids = array_map(fn($key) => $sensor_faces[$key], array_keys($deviated_sensors));
+        $this->db_manager->getSensorsListCollection()->updateMany(
+            ['sensorId' => ['$in' => $sensor_faces]],
+            ['$set' => ['isSensorOutlier' => false]]
+        );
+        $this->db_manager->getSensorsListCollection()->updateMany(
+            ['sensorId' => ['$in' => $sensor_ids]],
+            ['$set' => ['isSensorOutlier' => true]]
+        );
 
+        return $sensor_ids;
     }
 
     public function createListOfFaultySensors(int $period_duration)
