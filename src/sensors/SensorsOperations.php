@@ -111,9 +111,10 @@ class SensorsOperations
 
     private function refreshSensorLastUpdate(int $sensor_id, int $timestamp = 0): void
     {
+        $this->logger->debug("Sensor " . $sensor_id . " updated at " . $timestamp);
         $this->db_manager->getSensorsListCollection()->updateOne(
             ['sensorId' => $sensor_id],
-            ['$set' => ['lastUpdate' => $timestamp === 0 ? time() : $timestamp]]
+            ['$set' => ['sensorLastUpdate' => $timestamp === 0 ? time() : $timestamp]]
         );
     }
 

@@ -139,6 +139,35 @@ $app->delete('/remove-sensor/',
     }
 );
 
+$app->post('/add-temperature/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = json_decode($request->getBody()->getContents(), true);
+        if (is_null($data)) {
+            $response->getBody()->write("Invalid temperature data");
+            return $response->withStatus(400);
+        }
+
+        $temperature_data = [
+            'sensorId' => $data['sensorId'],
+            'temperature' => $data['temperature'],
+        ];
+
+        $sensor = new SensorsOperations($db_access, $logger);
+        if ($sensor->addTemperatureData($temperature_data)) {
+            $response->getBody()->write('Temperature data added successfully.');
+        } else {
+            $response->getBody()->write("Invalid temperature data or Sensor ID does not exist");
+            $response = $response->withStatus(400);
+        }
+
+        return $response;
+    }
+);
+
 $app->get('/sensor-data/',
     function (Request $request, Response $response, $args) use ($container)
     {
@@ -181,35 +210,6 @@ $app->get('/setup-database/',
         $db_manager = new DBManagement($db_access, $logger);
         $db_manager->setupDatabase();
         $response->getBody()->write($db_manager->getMessage());
-
-        return $response;
-    }
-);
-
-$app->post('/add-temperature/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = json_decode($request->getBody()->getContents(), true);
-        if (is_null($data)) {
-            $response->getBody()->write("Invalid temperature data");
-            return $response->withStatus(400);
-        }
-
-        $temperature_data = [
-            'sensorId' => $data['sensorId'],
-            'temperature' => $data['temperature'],
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        if ($sensor->addTemperatureData($temperature_data)) {
-            $response->getBody()->write('Temperature data added successfully.');
-        } else {
-            $response->getBody()->write("Invalid temperature data or Sensor ID does not exist");
-            $response = $response->withStatus(400);
-        }
 
         return $response;
     }
