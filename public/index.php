@@ -253,11 +253,17 @@ $app->get('/aggregate-by-face/',
         $db_access = $container->get('db_access');
 
         $data = $request->getQueryParams();
-
+        $avg_temp = null;
         $sensor = new DataAggregation($db_access, $logger);
-        $avg_temp = $sensor->aggregateDataSensorsByFace((int)$data['sensorFace'], (int)$data['start_from'], (int)$data['period']);
+        $sensor_face = SensorFace::tryfrom((int)$data['sensorFace']);
+        if (is_null($sensor_face)) {
+            $response->getBody()->write("Invalid sensor face");
+            $response->withStatus(400);
+        } else {
+            $avg_temp = $sensor->aggregateDataSensorsByFace($sensor_face, (int)$data['start_from'], (int)$data['period']);
 
-        $response->getBody()->write('Face ' . strtoupper(SensorFace::from((int)$data["sensorFace"])->name). ':');
+            $response->getBody()->write('Face ' . strtoupper(SensorFace::from((int)$data["sensorFace"])->name). ':');
+        }
         if (!is_null($avg_temp)) {
             $response->getBody()->write('<br/>');
             $response->getBody()->write(number_format($avg_temp, 2));

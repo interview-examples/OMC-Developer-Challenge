@@ -2,6 +2,7 @@
 
 namespace App\Processing;
 
+use App\Sensors\SensorFace;
 use App\Sensors\SensorsOperations;
 use App\Sensors\SensorValidator;
 use http\Exception\InvalidArgumentException;
@@ -24,9 +25,12 @@ class DataAggregation
     }
 
     /**
+     * Aggregation data by the sensor
+     * for period from period_starts_from up to period_starts_from + period
+     *
      * @param int $sensor_id
      * @param int $period_starts_from (unix timestamp)
-     * @param int $period
+     * @param int $period (in seconds)
      * @return float|null
      */
     public function aggregateDataSensorByID(int $sensor_id, int $period_starts_from, int $period): ?float
@@ -46,31 +50,41 @@ class DataAggregation
     }
 
     /**
-     * @param int $sensor_face
+     * Aggregation data by the Face
+     * for period from period_starts_from up to period_starts_from + period
+     *
+     * @param int $sensor_face (see SensorFace enum)
      * @param int $period_starts_from (unix timestamp)
-     * @param int $period
+     * @param int $period (in seconds)
      * @return float|null
      */
-    public function aggregateDataSensorsByFace(int $sensor_face, int $period_starts_from, int $period): ?float
+    public function aggregateDataSensorsByFace(SensorFace $sensor_face, int $period_starts_from, int $period): ?float
     {
-        if (SensorValidator::validateSensorFace($sensor_face)) {
-            $sensor_ids_cursor = $this->db_manager->getSensorsListCollection()->find(['sensorFace' => $sensor_face], ['projection' => ['sensorId' => 1]]);
-            $sensor_ids = array_map(fn($doc) => $doc['sensorId'], iterator_to_array($sensor_ids_cursor));
+        $sensor_faces_cursor = $this->db_manager->getSensorsListCollection()->find(['sensorFace' => $sensor_face->value], ['projection' => ['sensorId' => 1]]);
+        $sensor_faces = array_map(fn($doc) => $doc['sensorId'], iterator_to_array($sensor_faces_cursor));
 
-            if (empty($sensor_ids)) {
-                return null;
-            }
-
-            $cursor = $this->db_manager->getTemperaturesCollection()->aggregate(
-                [
-                    ['$match' => ['sensorId' => ['$in' => $sensor_ids], 'timestamp' => ['$gte' => $period_starts_from, '$lt' => $period_starts_from + $period]]],
-                    ['$group' => ['_id' => null, 'avg_temp' => ['$avg' => '$temperature']]],
-                ]
-            );
-            $tmp = iterator_to_array($cursor);
-            $this->logger->debug('Aggregating data for sensor ', $tmp);
-            return $tmp[0]['avg_temp'] ?? null;
+        if (empty($sensor_faces)) {
+            return null;
         }
-        throw new InvalidArgumentException('Sensor ID is not set correctly');
+
+        $cursor = $this->db_manager->getTemperaturesCollection()->aggregate(
+            [
+                ['$match' => ['sensorId' => ['$in' => $sensor_faces], 'timestamp' => ['$gte' => $period_starts_from, '$lt' => $period_starts_from + $period]]],
+                ['$group' => ['_id' => null, 'avg_temp' => ['$avg' => '$temperature']]],
+            ]
+        );
+        $tmp = iterator_to_array($cursor);
+        $this->logger->debug('Aggregating data for sensor ', $tmp);
+        return $tmp[0]['avg_temp'] ?? null;
+    }
+
+    public function createListOfSensorsWithDeviation(SensorFace $sensor_face, int $period_starts_from, int $period)
+    {
+
+    }
+
+    public function createListOfFaultySensors(int $period_starts_from, int $period)
+    {
+
     }
 }
