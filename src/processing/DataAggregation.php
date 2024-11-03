@@ -83,8 +83,26 @@ class DataAggregation
 
     }
 
-    public function createListOfFaultySensors(int $period_starts_from, int $period)
+    public function createListOfFaultySensors(int $period_duration)
     {
+        $critical_time = time() - $period_duration;
 
+        $this->db_manager->getSensorsListCollection()->updateMany(
+            [
+                'sensorLastUpdate' => ['$lt' => $critical_time],
+                'sensorState' => SensorsOperations::SENSOR_STATE_OK
+            ],
+            ['$set' => ['sensorState' => SensorsOperations::SENSOR_STATE_FAULTY]]
+        );
+
+        return $this->db_manager->getSensorsListCollection()->find(
+            ['sensorState' => SensorsOperations::SENSOR_STATE_FAULTY],
+            ['projection' => [
+                'sensorId' => 1,
+                'sensorFace' => 1,
+                'sensorLastUpdate' => 1,
+                ]
+            ]
+        )->toArray();
     }
 }
