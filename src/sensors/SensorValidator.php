@@ -50,8 +50,12 @@ class SensorValidator
 
     public static function validateSensorFace($sensor_face): bool
     {
-        $res=SensorFace::tryFrom($sensor_face) !== null ||
-            in_array($sensor_face, array_column(SensorFace::cases(), 'value'), true);
+        if ($sensor_face instanceof SensorFace) {
+            $res = true;
+        } else {
+            $res=SensorFace::tryFrom($sensor_face) !== null ||
+                in_array($sensor_face, array_column(SensorFace::cases(), 'value'), true);
+        }
         self::$logger->info("validateSensorFace:", ["sensorFace" => $sensor_face, "result" => $res]);
 
         return $res;
