@@ -272,7 +272,8 @@ $app->get('/aggregate-by-face/',
 );
 
 $app->get('/faulty-sensors/',
-    function (Request $request, Response $response, $args) use ($container) {
+    function (Request $request, Response $response, $args) use ($container)
+    {
         $logger = $container->get('logger');
         $db_access = $container->get('db_access');
 
@@ -287,7 +288,8 @@ $app->get('/faulty-sensors/',
 );
 
 $app->get('/deviation-sensors/',
-    function (Request $request, Response $response, $args) use ($container) {
+    function (Request $request, Response $response, $args) use ($container)
+    {
         $logger = $container->get('logger');
         $db_access = $container->get('db_access');
 

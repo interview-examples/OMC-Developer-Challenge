@@ -102,17 +102,18 @@ class DataAggregation
             $deviated_sensors,
             static fn($avg) => $avg !== null && abs(($avg - $face_avg_temp) / $face_avg_temp) > DataAggregation::DEVIATION_LIMIT
         );
-        $sensor_ids = array_map(fn($key) => $sensor_faces[$key], array_keys($deviated_sensors));
+        $result = array_map(fn($key, $value) => ['sensorId' => $sensor_faces[$key], 'averageValue' => $value], array_keys($deviated_sensors), array_values($deviated_sensors));
+
         $this->db_manager->getSensorsListCollection()->updateMany(
             ['sensorId' => ['$in' => $sensor_faces]],
             ['$set' => ['isSensorOutlier' => false]]
         );
         $this->db_manager->getSensorsListCollection()->updateMany(
-            ['sensorId' => ['$in' => $sensor_ids]],
+            ['sensorId' => ['$in' => array_column($result, 'sensorId')]],
             ['$set' => ['isSensorOutlier' => true]]
         );
 
-        return $sensor_ids;
+        return $result;
     }
 
     public function createListOfFaultySensors(int $period_duration)
