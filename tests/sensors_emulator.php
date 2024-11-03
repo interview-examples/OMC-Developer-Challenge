@@ -12,7 +12,7 @@ const SERVICE_URL = 'http://0.0.0.0:8080';
 function registerSensor($sensor_id): false|string
 {
     $url = SERVICE_URL . '/sensor-details/';
-    $data = json_encode(['sensorId' => $sensor_id, 'sensorFace' => array_rand([10 => 10, 20=>20, 30=>30, 40=>40]), 'sensorState' => true], JSON_THROW_ON_ERROR);
+    $data = json_encode(['sensorId' => $sensor_id, 'sensorFace' => array_rand([10 => 10, 20=>20, 30=>30, 40=>40])], JSON_THROW_ON_ERROR);
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -29,7 +29,7 @@ function sendSensorData($sensor_id, $temperature): false|string
 {
     $url = SERVICE_URL . '/add-temperature/';
     $data = json_encode(
-        ['sensorId' => $sensor_id, 'temperature' => $temperature, 'timestamp' => time()],
+        ['sensorId' => $sensor_id, 'temperature' => $temperature],
         JSON_THROW_ON_ERROR
     );
     $ch = curl_init($url);
