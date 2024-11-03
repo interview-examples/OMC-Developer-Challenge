@@ -90,6 +90,7 @@ class SensorsOperations
                         $res = false;
                     } else {
                         $this->db_manager->getTemperaturesCollection()->insertOne($temperature_data);
+                        $this->refreshSensorLastUpdate($temperature_data['sensorId']);
                         $res = true;
                     }
                 } else {
@@ -102,7 +103,15 @@ class SensorsOperations
         return $res;
     }
 
-    public function getSensorDataById(array $sensor_params)
+    private function refreshSensorLastUpdate(int $sensor_id): void
+    {
+        $this->db->SensorsList->updateOne(
+            ['sensorId' => $sensor_id],
+            ['$set' => ['lastUpdate' => time()]]
+        );
+    }
+
+    public function getSensorDataById(array $sensor_params):array
     {
         if (array_key_exists('sensorId', $sensor_params) &&
             SensorValidator::validateSensorId($sensor_params['sensorId'])
@@ -128,7 +137,7 @@ class SensorsOperations
         throw new InvalidArgumentException('Sensor ID is not set correctly');
     }
 
-    public function getIdBySensorId(int $sensor_id)
+    public function getIdBySensorId(int $sensor_id): string
     {
         $sensor = $this->db_manager->getSensorsListCollection()->findOne(['sensorId' => $sensor_id]);
 
