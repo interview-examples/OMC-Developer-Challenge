@@ -68,8 +68,8 @@ $app->post('/sensor-details/',
         }
 
         $sensor_details = [
-            'sensorId' => $data['sensorId'],
-            'sensorFace' => $data['sensorFace'],
+            'sensorId' => $data['sensorId'] ?? null,
+            'sensorFace' => $data['sensorFace'] ?? null,
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
@@ -93,13 +93,16 @@ $app->get('/sensor-details/',
         $data = $request->getQueryParams();
 
         $sensor_details = [
-            'sensorId' => $data['sensorId'],
+            'sensorId' => $data['sensorId'] ?? null,
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
         $res = $sensor->getSensorDetailsById($sensor_details);
 
         if (!is_null($res)) {
+            $sensor_face_tmp = (int)($res['sensorFace'] ?? 0);
+            $sensor_face_name = SensorFace::from($sensor_face_tmp)->name ?? '';
+            $res['sensorFace'] = $sensor_face_name;
             $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
             $response->getBody()->write('<br/>');
             $response->getBody()->write(print_r($res, true));
@@ -120,7 +123,7 @@ $app->delete('/remove-sensor/',
         $data = $request->getQueryParams();
 
         $sensor_details = [
-            'sensorId' => $data['sensorId'],
+            'sensorId' => $data['sensorId'] ?? null,
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
@@ -152,8 +155,8 @@ $app->post('/add-temperature/',
         }
 
         $temperature_data = [
-            'sensorId' => $data['sensorId'],
-            'temperature' => $data['temperature'],
+            'sensorId' => $data['sensorId'] ?? null,
+            'temperature' => $data['temperature'] ?? null,
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
@@ -176,7 +179,7 @@ $app->get('/sensor-data/',
 
         $data = $request->getQueryParams();
         $sensor_details = [
-            'sensorId' => $data['sensorId'],
+            'sensorId' => $data['sensorId'] ?? null,
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
@@ -222,9 +225,12 @@ $app->get('/aggregate-by-sensor/',
         $db_access = $container->get('db_access');
 
         $data = $request->getQueryParams();
+        $sensor_id = (int)($data['sensorId'] ?? 0);
+        $start_from = (int)($data['start_from'] ?? 0);
+        $period = (int)($data['period'] ?? 0);
 
         $sensor = new DataAggregation($db_access, $logger);
-        $avg_temp = $sensor->aggregateDataSensorByID((int)$data['sensorId'], (int)$data['start_from'], (int)$data['period']);
+        $avg_temp = $sensor->aggregateDataSensorByID($sensor_id, $start_from, $period);
 
         $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
         if (!is_null($avg_temp)) {
@@ -243,16 +249,21 @@ $app->get('/aggregate-by-face/',
         $db_access = $container->get('db_access');
 
         $data = $request->getQueryParams();
+        $start_from = (int)($data['start_from'] ?? 0);
+        $period = (int)($data['period'] ?? 0);
         $avg_temp = null;
+
         $sensor = new DataAggregation($db_access, $logger);
-        $sensor_face = SensorFace::tryfrom((int)$data['sensorFace']);
-        if (is_null($sensor_face)) {
+        $sensor_face_tmp = (int)($data['sensorFace'] ?? 0);
+        $sensor_face_value = SensorFace::tryfrom($sensor_face_tmp);
+        $sensor_face_name = SensorFace::from($sensor_face_tmp)->name ?? '';
+        if (is_null($sensor_face_value)) {
             $response->getBody()->write("Invalid sensor face");
             $response->withStatus(400);
         } else {
-            $avg_temp = $sensor->aggregateDataSensorsByFace($sensor_face, (int)$data['start_from'], (int)$data['period']);
+            $avg_temp = $sensor->aggregateDataSensorsByFace($sensor_face_value, $start_from, $period);
 
-            $response->getBody()->write('Face ' . strtoupper(SensorFace::from((int)$data["sensorFace"])->name). ':');
+            $response->getBody()->write('Face ' . strtoupper($sensor_face_name). ':');
         }
         if (!is_null($avg_temp)) {
             $response->getBody()->write('<br/>');
@@ -260,6 +271,21 @@ $app->get('/aggregate-by-face/',
         }
 
         return $response;
+    }
+);
+
+$app->get('/faulty-sensors/',
+    function (Request $request, Response $response, $args) use ($container) {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $res = $sensor->createListOfFaultySensors((int)($data['period_duration'] ?? 0));
+        $response->getBody()->write(json_encode($res));
+
+        return $response->withHeader('Content-Type', 'application/json');
     }
 );
 
