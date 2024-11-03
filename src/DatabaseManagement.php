@@ -47,6 +47,14 @@ class DatabaseManagement
     {
         try {
             $this->createCollections();
+            $this->db->SensorsList->updateMany(
+                ['isSensorOutlier' => ['$exists' => false]],
+                ['$set' => [
+                    'sensorState' => true,
+                    'isSensorOutlier' => false,
+                    'sensorLastUpdate' => 0
+                ]],
+            );
             $this->createSensorsListIndexes();
             $this->createTemperatureIndexes();
         } catch (\Exception $e) {
@@ -143,6 +151,15 @@ class DatabaseManagement
 
             $this->db->SensorsList->createIndex(['sensorFace' => 1]);
             $logger->debug('Created index on sensorFace');
+
+            $this->db->SensorsList->createIndex(['sensorState' => 1]);
+            $logger->debug('Created index on sensorState');
+
+            $this->db->SensorsList->createIndex(['isSensorOutlier' => 1]);
+            $logger->debug('Created index on sensorState');
+
+            $this->db->SensorsList->createIndex(['sensorLastUpdate' => 1]);
+            $logger->debug('Created index on sensorState');
         } catch (\Exception $e) {
             $logger->error('Error in createIndexes method', ['exception' => $e]);
             throw $e;
