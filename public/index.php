@@ -99,10 +99,12 @@ $app->get('/sensor-details/',
         $sensor = new SensorsOperations($db_access, $logger);
         $res = $sensor->getSensorDetailsById($sensor_details);
 
-        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
         if (!is_null($res)) {
+            $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
             $response->getBody()->write('<br/>');
             $response->getBody()->write(print_r($res, true));
+        } else {
+            $response->getBody()->write('Sensor ' . $data["sensorId"] . ' not registered.');
         }
 
         return $response;
@@ -198,7 +200,6 @@ $app->post('/add-temperature/',
 
         $temperature_data = [
             'sensorId' => $data['sensorId'],
-            'timestamp' => $data['timestamp'],
             'temperature' => $data['temperature'],
         ];
 
