@@ -134,7 +134,7 @@ class SensorsOperations
         return $res;
     }
 
-    public function getOneSensorDataById(array $sensor_params)
+    public function getSensorDataById(array $sensor_params)
     {
         if (array_key_exists('sensorId', $sensor_params) &&
             SensorValidator::validateSensorId($sensor_params['sensorId'])

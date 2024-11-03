@@ -160,7 +160,7 @@ $app->get('/sensor-data/',
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
-        $res = $sensor->getOneSensorDataById($sensor_details);
+        $res = $sensor->getSensorDataById($sensor_details);
 
         $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
         if (!is_null($res)) {
