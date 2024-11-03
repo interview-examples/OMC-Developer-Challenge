@@ -151,8 +151,7 @@ class DataAggregation
         $now->modify('last monday');
         $now->modify('-1 week');
         $now->setTime(0, 0, 0);
-        $unixtime = $now->getTimestamp();
 
-        return $unixtime;
+        return $now->getTimestamp();
     }
 }
