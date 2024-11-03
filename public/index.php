@@ -70,7 +70,6 @@ $app->post('/sensor-details/',
         $sensor_details = [
             'sensorId' => $data['sensorId'],
             'sensorFace' => $data['sensorFace'],
-            'sensorState' => $data['sensorState'] ?? true,
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
@@ -78,45 +77,6 @@ $app->post('/sensor-details/',
             $response->getBody()->write('Sensor ' . $data["sensorId"] . ' registered successfully.');
         } else {
             $response->getBody()->write("Invalid sensor details or Sensor already exists");
-            $response = $response->withStatus(400);
-        }
-
-        return $response;
-    }
-);
-
-/**
- * @OA\Put(
- *     path="/sensor-register/",
- *     @OA\Response(
- *         response="200",
- *         description=""
- *     )
- * )
- */
-$app->put('/sensor-details/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = json_decode($request->getBody()->getContents(), true);
-        if (is_null($data)) {
-            $response->getBody()->write("Invalid sensor details");
-            return $response->withStatus(400);
-        }
-
-        $sensor_details = [
-            'sensorId' => $data['sensorId'],
-            'sensorFace' => $data['sensorFace'],
-            'sensorState' => $data['sensorState'] ?? true,
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        if ($sensor->updateSensor($sensor_details)) {
-            $response->getBody()->write('Sensor ' . $data["sensorId"] . ' updated successfully.');
-        } else {
-            $response->getBody()->write("Invalid sensor details");
             $response = $response->withStatus(400);
         }
 
@@ -149,7 +109,7 @@ $app->get('/sensor-details/',
     }
 );
 
-$app->remove('/remove-sensor/',
+$app->delete('/remove-sensor/',
     function (Request $request, Response $response, $args) use ($container)
     {
         $logger = $container->get('logger');
