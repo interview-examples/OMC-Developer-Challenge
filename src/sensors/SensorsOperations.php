@@ -9,6 +9,9 @@ use App\DatabaseManagement;
 
 class SensorsOperations
 {
+    public const SENSOR_STATE_FAULTY = false;
+    public const SENSOR_STATE_OK = true;
+    public const SENSOR_OUTLIER = true;
     private DatabaseManagement $db_manager;
     private LoggerInterface $logger;
 
