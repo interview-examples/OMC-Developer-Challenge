@@ -109,8 +109,13 @@ class SensorsOperations
                     ['sensorId' => $temperature_data['sensorId']]
                 );
                 if ($sensor) {
-                    $this->db_manager->getTemperaturesCollection()->insertOne($temperature_data);
-                    $res = true;
+                    if ($sensor->sensorState) {
+                        $this->logger->info("Sensor " . $temperature_data['sensorId'] . " is disabled");
+                        $res = false;
+                    } else {
+                        $this->db_manager->getTemperaturesCollection()->insertOne($temperature_data);
+                        $res = true;
+                    }
                 } else {
                     $this->logger->warning("Sensor ID does not exist");
                 }
@@ -154,4 +159,26 @@ class SensorsOperations
         return $sensor->_id;
     }
 
+    public function removeSensor(array $sensor_params): ?bool
+    {
+        $res = null;
+        if (array_key_exists('sensorId', $sensor_params) &&
+            SensorValidator::validateSensorId($sensor_params['sensorId'])
+        ) {
+            try {
+                $this->db_manager->getTemperaturesCollection()->deleteMany(
+                    ['sensorId' => (int)$sensor_params['sensorId']]
+                );
+                $this->db_manager->getSensorsListCollection()->deleteOne(
+                    ['sensorId' => (int)$sensor_params['sensorId']]
+                );
+                $res = true;
+            } catch (\Exception $e) {
+                $this->logger->error("Error in removeSensor method: " . $e->getMessage());
+            }
+        } else {
+            $this->logger->error("Invalid sensor ID");
+        }
+        return $res;
+    }
 }

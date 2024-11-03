@@ -149,6 +149,34 @@ $app->get('/sensor-details/',
     }
 );
 
+$app->remove('/remove-sensor/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+
+        $sensor_details = [
+            'sensorId' => $data['sensorId'],
+        ];
+
+        $sensor = new SensorsOperations($db_access, $logger);
+        $res = $sensor->removeSensorById($sensor_details);
+
+        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
+        if ($res) {
+            $response->getBody()->write('<br/>');
+            $response->getBody()->write('Sensor removed successfully');
+        } else {
+            $response->getBody()->write('<br/>');
+            $response->getBody()->write('Sensor not found');
+        }
+
+        return $response;
+    }
+);
+
 $app->get('/sensor-data/',
     function (Request $request, Response $response, $args) use ($container)
     {
