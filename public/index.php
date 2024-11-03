@@ -100,9 +100,7 @@ $app->get('/sensor-details/',
         $res = $sensor->getSensorDetailsById($sensor_details);
 
         if (!is_null($res)) {
-            $sensor_face_tmp = (int)($res['sensorFace'] ?? 0);
-            $sensor_face_name = SensorFace::from($sensor_face_tmp)->name ?? '';
-            $res['sensorFace'] = $sensor_face_name;
+            $res['sensorFace'] = getSensorFaceName((int)($res['sensorFace'] ?? 0));
             $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
             $response->getBody()->write('<br/>');
             $response->getBody()->write(print_r($res, true));
@@ -256,14 +254,13 @@ $app->get('/aggregate-by-face/',
         $sensor = new DataAggregation($db_access, $logger);
         $sensor_face_tmp = (int)($data['sensorFace'] ?? 0);
         $sensor_face_value = SensorFace::tryfrom($sensor_face_tmp);
-        $sensor_face_name = SensorFace::from($sensor_face_tmp)->name ?? '';
         if (is_null($sensor_face_value)) {
             $response->getBody()->write("Invalid sensor face");
             $response->withStatus(400);
         } else {
             $avg_temp = $sensor->aggregateDataSensorsByFace($sensor_face_value, $start_from, $period);
 
-            $response->getBody()->write('Face ' . strtoupper($sensor_face_name). ':');
+            $response->getBody()->write('Face ' . strtoupper(getSensorFaceName($sensor_face_tmp)). ':');
         }
         if (!is_null($avg_temp)) {
             $response->getBody()->write('<br/>');
@@ -359,3 +356,11 @@ $app->delete('/tests/remove-all-temperatures/',
 $app->addErrorMiddleware(true, true, true); // Note: must be added last
 
 $app->run();
+
+function getSensorFaceName($sensor_face): string
+{
+    $sensor_face_tmp = (int)($sensor_face ?? 0);
+    $sensor_face_name = SensorFace::from($sensor_face_tmp)->name ?? '';
+
+    return $sensor_face_name;
+}
