@@ -6,19 +6,23 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use DI\Container;
-
-require __DIR__ . '/../vendor/autoload.php';
-$settings = require __DIR__ . '/../src/settings.php';
-
+use Slim\Views\Twig;
+use Slim\Views\TwigMiddleware;
 use App\DatabaseManagement as DBManagement;
 use \App\Sensors\SensorFace;
 use App\Sensors\SensorValidator;
 use App\Sensors\SensorsOperations;
 use \App\Processing\DataAggregation;
 
+require __DIR__ . '/../vendor/autoload.php';
+$settings = require __DIR__ . '/../src/settings.php';
+
 $container = new Container();
 $container->set('logger', $settings['logger']);
 $container->set('db_access', $settings['db_access']);
+$twig = new Twig(__DIR__ . '/../templates', ['cache' => false]);
+//$twig = Twig::create(__DIR__ . '/../templates', ['cache' => false]);
+
 AppFactory::setContainer($container);
 
 SensorValidator::setContainer($container);
@@ -28,6 +32,8 @@ SensorValidator::setContainer($container);
  */
 
 $app = AppFactory::create();
+//$app->add(TwigMiddleware::create($app, $twig));
+
 
 /**
  * @OA\Get(
@@ -109,6 +115,31 @@ $app->get('/sensor-details/',
         }
 
         return $response;
+    }
+);
+
+$app->get('/html/sensor-details/',
+    function (Request $request, Response $response, $args) use ($container, $twig)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+        $sensor_details = [
+            'sensorId' => $data['sensorId'] ?? null,
+        ];
+
+        $sensor = new SensorsOperations($db_access, $logger);
+        $res = $sensor->getSensorDetailsById($sensor_details);
+
+        if (!is_null($res)) {
+            $res['sensorFace'] = getSensorFaceName((int)($res['sensorFace'] ?? 0));
+            $res['sensorLastUpdate'] = date('Y-m-d H:i:s', $res['sensorLastUpdate']);
+            return $twig->render($response, 'sensor_details.twig', $res);
+        } else {
+            $response->getBody()->write('Sensor ' . $data["sensorId"] . ' not registered.');
+            return $response;
+        }
     }
 );
 

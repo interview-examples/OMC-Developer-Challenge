@@ -6,7 +6,8 @@
         "php-di/php-di": "^7.0",
         "monolog/monolog": "^3.7",
         "zircote/swagger-php": "^4.11",
-        "twig/twig": "^3.0"
+        "twig/twig": "^3.0",
+        "slim/twig-view": "^2.2"
     },
     "autoload": {
          "psr-4": {
