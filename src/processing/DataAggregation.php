@@ -60,7 +60,12 @@ class DataAggregation
      */
     public function aggregateDataSensorsByFace(SensorFace $sensor_face, int $period_starts_from, int $period): ?float
     {
-        $sensor_faces_cursor = $this->db_manager->getSensorsListCollection()->find(['sensorFace' => $sensor_face->value], ['projection' => ['sensorId' => 1]]);
+        $sensor_faces_cursor = $this->db_manager->getSensorsListCollection()->find(
+            [
+                'sensorFace' => $sensor_face->value,
+                'sensorState' => SensorsOperations::SENSOR_STATE_OK,
+            ],
+            ['projection' => ['sensorId' => 1]]);
         $sensor_faces = array_map(fn($doc) => $doc['sensorId'], iterator_to_array($sensor_faces_cursor));
 
         if (empty($sensor_faces)) {
