@@ -138,4 +138,20 @@ class DataAggregation
             ]
         )->toArray();
     }
+
+    /**
+     * Method calculate unix time for the 0:00 of the Monday of the previous week
+     *
+     * @return int
+     */
+    private function getPeriodStartUnixTimestamp(): int
+    {
+        $now = new DateTime();
+        $now->modify('last monday');
+        $now->modify('-1 week');
+        $now->setTime(0, 0, 0);
+        $unixtime = $now->getTimestamp();
+
+        return $unixtime;
+    }
 }
