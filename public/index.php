@@ -1,12 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use OpenApi\Attributes as OA;
+use OpenApi\Annotations as OA;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use DI\Container;
 use Slim\Views\Twig;
+use Slim\Views\TwigMiddleware;
+use Twig\Loader\FilesystemLoader;
 use App\DatabaseManagement as DBManagement;
 use App\Sensors\SensorFace;
 use App\Sensors\SensorValidator;
@@ -19,21 +21,41 @@ $settings = require __DIR__ . '/../src/settings.php';
 $container = new Container();
 $container->set('logger', $settings['logger']);
 $container->set('db_access', $settings['db_access']);
-$twig = new Twig(__DIR__ . '/../templates', ['cache' => false]);
-//$twig = Twig::create(__DIR__ . '/../templates', ['cache' => false]);
+$container->set(Twig\Loader\LoaderInterface::class, function() {
+    return new FilesystemLoader(__DIR__ . '/../templates');
+});
+$container->set(Twig::class, function($container) {
+    return new Twig($container->get(Twig\Loader\LoaderInterface::class), ['cache' => false]);
+});
+$twig = $container->get(Twig::class);
 
 AppFactory::setContainer($container);
 
 SensorValidator::setContainer($container);
 
 /**
- * @OA\Info(title="OMC Developer Challenge", version="0.1")
+ * @OA\Info(
+ *     title="OMC Developer Challenge",
+ *     version="0.1"
+ * )
+ * @OA\PathItem(path="/")
  */
 
 $app = AppFactory::create();
-//$app->add(TwigMiddleware::create($app, $twig));
+$app->add(TwigMiddleware::createFromContainer($app, Twig::class));
 
+$app->get('/swagger.php', function (Request $request, Response $response, $args) {
+    require __DIR__ . '/../public/swagger.php';
+    return $response;
+});
+$app->get('/docs/', function ($request, $response) use ($container)
+{
+    $logger = $container->get('logger');
+    $logger->info('Accessing /docs route');
+    $twig = $container->get(Twig::class);
 
+    return $twig->render($response, 'swagger.twig');
+});
 /**
  * @OA\Get(
  *     path="/",
@@ -53,10 +75,18 @@ $app->get('/',
 
 /**
  * @OA\Post(
- *     path="/sensor-register/",
+ *     path="/sensor-details/",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="sensorId", type="integer"),
+ *             @OA\Property(property="sensorFace", type="integer")
+ *         )
+ *     ),
  *     @OA\Response(
  *         response="200",
- *         description=""
+ *         description="Creates new sensor in the database. sensorID must be unique. sensorFace must be one of the following: 10, 20, 30, 40"
  *     )
  * )
  */
@@ -89,6 +119,15 @@ $app->post('/sensor-details/',
     }
 );
 
+/**
+ * @OA\GET(
+ *     path="/sensor-details/",
+ *     @OA\Response(
+ *         response="200",
+ *         description="Returns JSON - details of the sensor by its Id."
+ *     )
+ * )
+ */
 $app->get('/sensor-details/',
     function (Request $request, Response $response, $args) use ($container)
     {
@@ -117,6 +156,15 @@ $app->get('/sensor-details/',
     }
 );
 
+/**
+ * @OA\GET(
+ *     path="/html/sensor-details/",
+ *     @OA\Response(
+ *         response="200",
+ *         description="Returns HTML - details of the sensor by its Id."
+ *     )
+ * )
+ */
 $app->get('/html/sensor-details/',
     function (Request $request, Response $response, $args) use ($container, $twig)
     {
