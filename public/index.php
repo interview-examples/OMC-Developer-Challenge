@@ -345,6 +345,20 @@ $app->get('/deviation-sensors/',
     }
 );
 
+$app->get('/lastweek-report/',
+    function (Request $request, Response $response, $args) use ($container)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $res = $sensor->createLastWeekReport();
+        $response->getBody()->write(json_encode($res));
+
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+);
+
 /**
  * Test endpoints =============================
  */

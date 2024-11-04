@@ -140,6 +140,25 @@ class DataAggregation
         )->toArray();
     }
 
+    public function createLastWeekReport(): array
+    {
+        $res = [];
+        $time_start = $this->getPeriodStartUnixTimestamp();
+        $secs_per_day = 24 * 60 * 60;
+        $secs_per_week = 7 * $secs_per_day;
+        $days_name = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ];
+        $n_day = 0;
+        for ($t = $time_start; $t < $time_start + $secs_per_week; $t += $secs_per_day) {
+            foreach (SensorFace::cases() as $face) {
+                $res[$days_name[$n_day]][$face->name] = $this->aggregateDataSensorsByFace($face, $t, $secs_per_day) ?? 0;
+            }
+            $res[$days_name[$n_day]]['All'] = array_sum($res[$days_name[$n_day]]);
+            $n_day++;
+        }
+
+        return $res;
+    }
+
     /**
      * Method calculate unix time for the 0:00 of the Monday of the previous week
      *
@@ -148,7 +167,7 @@ class DataAggregation
     private function getPeriodStartUnixTimestamp(): int
     {
         $now = new DateTime();
-        $now->modify('last monday');
+        $now->modify('last sunday');
         $now->modify('-1 week');
         $now->setTime(0, 0, 0);
 
