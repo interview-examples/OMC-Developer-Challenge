@@ -143,6 +143,15 @@ class DatabaseManagement
 
             $this->db->SensorsList->createIndex(['sensorFace' => 1]);
             $logger->debug('Created index on sensorFace');
+
+            $this->db->SensorsList->createIndex(['sensorState' => 1]);
+            $logger->debug('Created index on sensorState');
+
+            $this->db->SensorsList->createIndex(['isSensorOutlier' => 1]);
+            $logger->debug('Created index on sensorState');
+
+            $this->db->SensorsList->createIndex(['sensorLastUpdate' => 1]);
+            $logger->debug('Created index on sensorState');
         } catch (\Exception $e) {
             $logger->error('Error in createIndexes method', ['exception' => $e]);
             throw $e;
