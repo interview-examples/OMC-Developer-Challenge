@@ -129,16 +129,17 @@ $app->get('/html/sensor-details/',
         ];
 
         $sensor = new SensorsOperations($db_access, $logger);
-        $res = $sensor->getSensorDetailsById($sensor_details);
+        $sensor_res = $sensor->getSensorDetailsById($sensor_details);
 
-        if (!is_null($res)) {
-            $res['sensorFace'] = getSensorFaceName((int)($res['sensorFace'] ?? 0));
-            $res['sensorLastUpdate'] = date('Y-m-d H:i:s', $res['sensorLastUpdate']);
-            return $twig->render($response, 'sensor_details.twig', $res);
+        if (!is_null($sensor_res)) {
+            $sensor_res['sensorFace'] = getSensorFaceName((int)($sensor_res['sensorFace'] ?? 0));
+            $sensor_res['sensorLastUpdate'] = date('Y-m-d H:i:s', $sensor_res['sensorLastUpdate']);
+            $res = $twig->render($response, 'sensor_details.twig', $sensor_res);
         } else {
             $response->getBody()->write('Sensor ' . $data["sensorId"] . ' not registered.');
-            return $response;
+            $res = $response;
         }
+        return $res;
     }
 );
 
@@ -418,7 +419,5 @@ $app->run();
 function getSensorFaceName($sensor_face): string
 {
     $sensor_face_tmp = (int)($sensor_face ?? 0);
-    $sensor_face_name = SensorFace::from($sensor_face_tmp)->name ?? '';
-
-    return $sensor_face_name;
+    return SensorFace::from($sensor_face_tmp)->name ?? '';
 }
