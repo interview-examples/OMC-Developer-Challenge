@@ -15,7 +15,7 @@
     </tr>
     {% for hour, values in data %}
         <tr>
-            <th>{{ hour }}</th>
+            <th>{{ hour | date("H:i d.m.Y") }}</th>
             <td>{{ values['North']|default('N/A') }}</td>
             <td>{{ values['West']|default('N/A') }}</td>
             <td>{{ values['East']|default('N/A') }}</td>

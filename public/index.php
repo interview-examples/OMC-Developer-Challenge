@@ -50,12 +50,11 @@ $app->get('/swagger.php', function (Request $request, Response $response, $args)
 });
 $app->get('/docs/', function ($request, $response) use ($container)
 {
-    $logger = $container->get('logger');
-    $logger->info('Accessing /docs route');
     $twig = $container->get(Twig::class);
 
     return $twig->render($response, 'swagger.twig');
 });
+
 /**
  * @OA\Get(
  *     path="/",
@@ -483,7 +482,7 @@ $app->get('/aggregate-hourly/', function (Request $request, Response $response, 
     $start_from = (int)($data['start_from'] ?? 0);
 
     $sensor = new DataAggregation($db_access, $logger);
-    $res = $sensor->aggregateHourlyData($start_from);
+    $res = $sensor->createHourlyAggregatedReport($start_from);
 
     $response->getBody()->write(json_encode($res));
     return $response->withHeader('Content-Type', 'application/json');
@@ -506,7 +505,7 @@ $app->get('/html/aggregate-hourly-response/',
         $start_from = (int)($data['start_from'] ?? 0);
 
         $sensor = new DataAggregation($db_access, $logger);
-        $res = $sensor->aggregateHourlyData($start_from);
+        $res = $sensor->createHourlyAggregatedReport($start_from);
 
         return $twig->render($response, 'aggregate_hourly.twig', ['data' => $res]);
     }

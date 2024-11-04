@@ -156,33 +156,33 @@ class DataAggregation
         return $res;
     }
 
-    public function aggregateHourlyData(int $period_starts_from = 0): array
+    public function createHourlyAggregatedReport(int $period_starts_from = 0): array
     {
-        $match_stage = ['sensorState' => SensorsOperations::SENSOR_STATE_OK];
+        $res = [];
+        $secs_per_hour = 60 * 60;
+
         if ($period_starts_from > 0) {
-            $match_stage['timestamp'] = ['$gte' => $period_starts_from];
+            $time_start = $period_starts_from;
+        } else {
+            $earliest_record = $this->db_manager->getTemperaturesCollection()->findOne([], ['sort' => ['timestamp' => 1]]);
+            if ($earliest_record) {
+                $time_start = $earliest_record['timestamp'];
+            } else {
+                return $res;
+            }
+        }
+        $time_start = $time_start - ($time_start % $secs_per_hour);
+        $time_end = time();
+
+        for ($t = $time_start; $t < $time_end; $t += $secs_per_hour) {
+            foreach (SensorFace::cases() as $face) {
+                $hourly_data = $this->aggregateDataSensorsByFace($face, $t, $secs_per_hour);
+                $res[$t][$face->name] = $hourly_data ?? 0;
+            }
+            $res[$t]['All'] = array_sum(array_column($res[$t], $face->name));
         }
 
-        $cursor = $this->db_manager->getTemperaturesCollection()->aggregate([
-            ['$match' => $match_stage],
-            ['$group' => [
-                '_id' => [
-                    'face' => '$sensorFace',
-                    'hour' => ['$hour' => ['$toDate' => ['$multiply' => ['$timestamp', 1000]]]]
-                ],
-                'avg_temp' => ['$avg' => '$temperature']
-            ]],
-            ['$sort' => ['_id.face' => 1, '_id.hour' => 1]]
-        ]);
-
-        $result = [];
-        foreach ($cursor as $doc) {
-            $face = SensorFace::from($doc['_id']['face'])->name;
-            $hour = $doc['_id']['hour'];
-            $result[$face][$hour] = $doc['avg_temp'];
-        }
-
-        return $result;
+        return $res;
     }
 
     /**
