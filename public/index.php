@@ -8,11 +8,13 @@ use Slim\Factory\AppFactory;
 use DI\Container;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
+use Slim\Views\TwigEnvironment;
+use Slim\Views\TwigLoaderFilesystemLoader;
 use App\DatabaseManagement as DBManagement;
-use \App\Sensors\SensorFace;
+use App\Sensors\SensorFace;
 use App\Sensors\SensorValidator;
 use App\Sensors\SensorsOperations;
-use \App\Processing\DataAggregation;
+use App\Processing\DataAggregation;
 
 require __DIR__ . '/../vendor/autoload.php';
 $settings = require __DIR__ . '/../src/settings.php';
