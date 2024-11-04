@@ -156,6 +156,35 @@ class DataAggregation
         return $res;
     }
 
+    public function aggregateHourlyData(int $period_starts_from = 0): array
+    {
+        $match_stage = ['sensorState' => SensorsOperations::SENSOR_STATE_OK];
+        if ($period_starts_from > 0) {
+            $match_stage['timestamp'] = ['$gte' => $period_starts_from];
+        }
+
+        $cursor = $this->db_manager->getTemperaturesCollection()->aggregate([
+            ['$match' => $match_stage],
+            ['$group' => [
+                '_id' => [
+                    'face' => '$sensorFace',
+                    'hour' => ['$hour' => ['$toDate' => ['$multiply' => ['$timestamp', 1000]]]]
+                ],
+                'avg_temp' => ['$avg' => '$temperature']
+            ]],
+            ['$sort' => ['_id.face' => 1, '_id.hour' => 1]]
+        ]);
+
+        $result = [];
+        foreach ($cursor as $doc) {
+            $face = SensorFace::from($doc['_id']['face'])->name;
+            $hour = $doc['_id']['hour'];
+            $result[$face][$hour] = $doc['avg_temp'];
+        }
+
+        return $result;
+    }
+
     /**
      * Method calculate unix time for the 0:00 of the Monday of the previous week
      *
