@@ -350,7 +350,7 @@ $app->get('/aggregate-by-face/',
     }
 );
 
-$app->get('/faulty-sensors/',
+$app->get('/broken-sensors/',
     function (Request $request, Response $response, $args) use ($container)
     {
         $logger = $container->get('logger');
@@ -363,6 +363,28 @@ $app->get('/faulty-sensors/',
         $response->getBody()->write(json_encode($res));
 
         return $response->withHeader('Content-Type', 'application/json');
+    }
+);
+
+$app->get('/html/broken-sensors/',
+    function (Request $request, Response $response) use ($twig)
+    {
+        return $twig->render($response, 'broken_sensors_input_params.twig');
+    }
+);
+
+$app->get('/html/broken-sensors-response/',
+    function (Request $request, Response $response) use ($container, $twig)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $res = $sensor->createListOfFaultySensors((int)($data['period_duration'] ?? 0));
+
+        return $twig->render($response, 'broken_sensors.twig', ['sensors' => $res]);
     }
 );
 
@@ -385,8 +407,40 @@ $app->get('/deviation-sensors/',
         } else {
             $res = $sensor->createListOfSensorsWithDeviation($sensor_face_value, $start_from, $period);
 
-            $response->getBody()->write('Face ' . strtoupper(getSensorFaceName($sensor_face_tmp)). ':');
             $response->getBody()->write(json_encode($res));
+        }
+
+        return $response;
+    }
+);
+
+$app->get('/html/deviated-sensors/',
+    function (Request $request, Response $response) use ($twig)
+    {
+        return $twig->render($response, 'deviated_sensors_input_params.twig');
+    }
+);
+
+$app->get('/html/deviated-sensors-response/',
+    function (Request $request, Response $response) use ($container, $twig)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+        $start_from = (int)($data['start_from'] ?? 0);
+        $period = (int)($data['period'] ?? 0);
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $sensor_face_tmp = (int)($data['sensor_face'] ?? 0);
+        $sensor_face_value = SensorFace::tryfrom($sensor_face_tmp);
+        if (is_null($sensor_face_value)) {
+            $response->getBody()->write("Invalid Sensor Face value");
+            $response->withStatus(400);
+        } else {
+            $res = $sensor->createListOfSensorsWithDeviation($sensor_face_value, $start_from, $period);
+
+            $response = $twig->render($response, 'deviated_sensors.twig', ['sensor_face' => getSensorFaceName($sensor_face_tmp), 'sensors' => $res]);
         }
 
         return $response;
@@ -404,6 +458,57 @@ $app->get('/lastweek-report/',
         $response->getBody()->write(json_encode($res));
 
         return $response->withHeader('Content-Type', 'application/json');
+    }
+);
+
+$app->get('/html/lastweek-report/',
+    function (Request $request, Response $response, $args) use ($container, $twig)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $res = $sensor->createLastWeekReport();
+        $response = $twig->render($response, 'last_week_report.twig', ['data' => $res]);
+
+        return $response;
+    }
+);
+
+$app->get('/aggregate-hourly/', function (Request $request, Response $response, $args) use ($container) {
+    $logger = $container->get('logger');
+    $db_access = $container->get('db_access');
+
+    $data = $request->getQueryParams();
+    $start_from = (int)($data['start_from'] ?? 0);
+
+    $sensor = new DataAggregation($db_access, $logger);
+    $res = $sensor->aggregateHourlyData($start_from);
+
+    $response->getBody()->write(json_encode($res));
+    return $response->withHeader('Content-Type', 'application/json');
+});
+
+$app->get('/html/aggregate-hourly/',
+    function (Request $request, Response $response) use ($twig)
+    {
+        return $twig->render($response, 'aggregate_hourly_input_params.twig');
+    }
+);
+
+$app->get('/html/aggregate-hourly-response/',
+    function (Request $request, Response $response) use ($container, $twig)
+    {
+        $logger = $container->get('logger');
+        $db_access = $container->get('db_access');
+
+        $data = $request->getQueryParams();
+        $start_from = (int)($data['start_from'] ?? 0);
+
+        $sensor = new DataAggregation($db_access, $logger);
+        $res = $sensor->aggregateHourlyData($start_from);
+
+        return $twig->render($response, 'aggregate_hourly.twig', ['data' => $res]);
     }
 );
 
