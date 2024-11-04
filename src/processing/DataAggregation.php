@@ -156,6 +156,35 @@ class DataAggregation
         return $res;
     }
 
+    public function createHourlyAggregatedReport(int $period_starts_from = 0): array
+    {
+        $res = [];
+        $secs_per_hour = 60 * 60;
+
+        if ($period_starts_from > 0) {
+            $time_start = $period_starts_from;
+        } else {
+            $earliest_record = $this->db_manager->getTemperaturesCollection()->findOne([], ['sort' => ['timestamp' => 1]]);
+            if ($earliest_record) {
+                $time_start = $earliest_record['timestamp'];
+            } else {
+                return $res;
+            }
+        }
+        $time_start = $time_start - ($time_start % $secs_per_hour);
+        $time_end = time();
+
+        for ($t = $time_start; $t < $time_end; $t += $secs_per_hour) {
+            foreach (SensorFace::cases() as $face) {
+                $hourly_data = $this->aggregateDataSensorsByFace($face, $t, $secs_per_hour);
+                $res[$t][$face->name] = $hourly_data ?? 0;
+            }
+            $res[$t]['All'] = array_sum(array_column($res[$t], $face->name));
+        }
+
+        return $res;
+    }
+
     /**
      * Method calculate unix time for the 0:00 of the Monday of the previous week
      *
