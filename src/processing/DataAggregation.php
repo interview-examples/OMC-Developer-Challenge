@@ -15,15 +15,12 @@ class DataAggregation
     public const float DEVIATION_LIMIT = 0.2;
     private DatabaseManagement $db_manager;
     private LoggerInterface $logger;
-    private SensorsOperations $sensors_operations;
 
     public function __construct(array $db_access, LoggerInterface $logger)
     {
         $this->logger = $logger;
 
         $this->db_manager = new DatabaseManagement($db_access, $logger);
-
-        $this->sensors_operations = new SensorsOperations($db_access, $this->logger);
     }
 
     /**
