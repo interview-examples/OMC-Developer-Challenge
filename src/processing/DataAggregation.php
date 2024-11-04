@@ -100,7 +100,7 @@ class DataAggregation
             $deviated_sensors,
             static fn($avg) => $avg !== null && abs(($avg - $face_avg_temp) / $face_avg_temp) > DataAggregation::DEVIATION_LIMIT
         );
-        $result = array_map(fn($key, $value) => ['sensorId' => $sensor_faces[$key], 'averageValue' => $value], array_keys($deviated_sensors), array_values($deviated_sensors));
+        $result = array_map(fn($key, $value) => ['sensorId' => $sensor_faces[$key], 'averageValue' => $value, 'faceAverageValue' => $face_avg_temp], array_keys($deviated_sensors), array_values($deviated_sensors));
 
         $this->db_manager->getSensorsListCollection()->updateMany(
             ['sensorId' => ['$in' => $sensor_faces]],
@@ -140,7 +140,7 @@ class DataAggregation
     public function createLastWeekReport(): array
     {
         $res = [];
-        $time_start = $this->getPeriodStartUnixTimestamp();
+        $time_start = $this->getPeriodStartLastWeekUnixTimestamp();
         $secs_per_day = 24 * 60 * 60;
         $secs_per_week = 7 * $secs_per_day;
         $days_name = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' ];
@@ -161,7 +161,7 @@ class DataAggregation
      *
      * @return int
      */
-    private function getPeriodStartUnixTimestamp(): int
+    public function getPeriodStartLastWeekUnixTimestamp(): int
     {
         $now = new DateTime();
         $now->modify('last sunday');

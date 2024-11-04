@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Hourly Temperature Data</title>
+</head>
+<body>
+<h1>Hourly Temperature Data</h1>
+<table style="border: darkgrey 2px solid">
+    <tr>
+        <th>Hour</th>
+        <th>North</th>
+        <th>West</th>
+        <th>East</th>
+        <th>South</th>
+    </tr>
+    {% for hour, values in data %}
+        <tr>
+            <th>{{ hour }}</th>
+            <td>{{ values['North']|default('N/A') }}</td>
+            <td>{{ values['West']|default('N/A') }}</td>
+            <td>{{ values['East']|default('N/A') }}</td>
+            <td>{{ values['South']|default('N/A') }}</td>
+        </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
