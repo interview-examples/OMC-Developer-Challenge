@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hourly Data</title>
+
+    <script>
+        async function fetchHourlyData() {
+            const response = await fetch('http://0.0.0.0:8080/aggregate-hourly/');
+            const data = await response.json();
+            console.log(data);
+            // Note: Update the HTML with the fetched data
+        }
+
+        setInterval(fetchHourlyData, 3600000); // Fetch data every hour
+        window.onload = fetchHourlyData;
+    </script>
+</head>
+<body>
+    <h1>Hourly Temperature Data</h1>
+    <div id="data-container">
+        <!-- Data will be inserted here -->
+    </div>
+</body>
+</html>
