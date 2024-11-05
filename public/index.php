@@ -1,23 +1,22 @@
 <?php
 declare(strict_types=1);
 
+use App\Controllers\AggregationController;
+use App\Controllers\ReportController;
+use App\Controllers\SensorController;
+use App\DatabaseManagement as DBManagement;
+use App\Processing\DataAggregation;
+use App\Sensors\SensorFace;
+use App\Sensors\SensorValidator;
+use App\Sensors\SensorsOperations;
+use DI\Container;
 use OpenApi\Annotations as OA;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
-use DI\Container;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 use Twig\Loader\FilesystemLoader;
-use App\DatabaseManagement as DBManagement;
-use App\Sensors\SensorFace;
-use App\Sensors\SensorValidator;
-use App\Sensors\SensorsOperations;
-use App\Processing\DataAggregation;
-use App\Controllers\AggregationController;
-use App\Controllers\ReportController;
-use App\Controllers\SensorController;
-use App\Sensors\SensorOperations;
 
 require __DIR__ . '/../vendor/autoload.php';
 $settings = require __DIR__ . '/../src/settings.php';
@@ -25,34 +24,41 @@ $settings = require __DIR__ . '/../src/settings.php';
 $container = new Container();
 $container->set('logger', $settings['logger']);
 $container->set('db_access', $settings['db_access']);
-$container->set(Twig\Loader\LoaderInterface::class, function() {
+$container->set(Twig\Loader\LoaderInterface::class, function()
+{
     return new FilesystemLoader(__DIR__ . '/../templates');
 });
-$container->set(Twig::class, function($container) {
+$container->set(Twig::class, function($container)
+{
     return new Twig($container->get(Twig\Loader\LoaderInterface::class), ['cache' => false]);
 });
-$container->set(DataAggregation::class, function ($c) {
+$container->set(DataAggregation::class, function ($c)
+{
     return new DataAggregation($c->get('db_access'), $c->get('logger'));
 });
-$container->set(ReportController::class, function($container) {
+$container->set(ReportController::class, function($container)
+{
     return new ReportController(
         $container->get(DataAggregation::class),
         $container->get(Twig::class)
     );
 });
-$container->set(SensorsOperations::class, function($container) {
+$container->set(SensorsOperations::class, function($container)
+{
     return new SensorsOperations(
         $container->get('db_access'),
         $container->get('logger')
     );
 });
-$container->set(SensorController::class, function($container) {
+$container->set(SensorController::class, function($container)
+{
     return new SensorController(
         $container->get(SensorsOperations::class),
         $container->get(Twig::class)
     );
 });
-$container->set(AggregationController::class, function($container) {
+$container->set(AggregationController::class, function($container)
+{
     return new AggregationController(
         $container->get(DataAggregation::class),
         $container->get(Twig::class)

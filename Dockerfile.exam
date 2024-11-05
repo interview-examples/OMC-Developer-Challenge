@@ -1,0 +1,57 @@
+# Dockerfile.exam
+FROM php:8.3-cli
+
+LABEL authors="vitaly_root"
+
+RUN pecl install xdebug && docker-php-ext-enable xdebug
+
+COPY xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
+
+RUN apt-get update && apt-get install -y \
+    libssl-dev \
+    libzip-dev \
+    libicu-dev \
+    libonig-dev \
+    zlib1g-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libpq-dev \
+    libmemcached-dev \
+    librabbitmq-dev \
+    libssh-dev \
+    libzstd-dev \
+    libwebp-dev \
+    libmagickwand-dev \
+    libmagickcore-dev \
+    libmagick++-dev \
+    libyaml-dev \
+    libsqlite3-dev \
+    libsqlite3-0 \
+    sqlite3 \
+    libcurl4-openssl-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libedit-dev \
+    libffi-dev \
+    libgmp-dev \
+    libldap2-dev \
+    libsasl2-dev \
+    librtmp-dev \
+    libssh2-1-dev \
+    libidn2-0-dev \
+    libpsl-dev \
+    libnghttp2-dev \
+    libbrotli-dev \
+    liblz4-dev \
+    liblzma-dev \
+    libsnappy-dev
+
+COPY . /app
+WORKDIR /app
+
+RUN composer install
+
+CMD ["php", "-S", "0.0.0.0:80", "-t", "public"]
