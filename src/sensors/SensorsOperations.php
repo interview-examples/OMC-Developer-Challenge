@@ -151,7 +151,7 @@ class SensorsOperations
             }
             return $sensor_details;
         }
-        throw new InvalidArgumentException('Sensor ID is not set correctly');
+        throw new \InvalidArgumentException('Sensor ID is not set correctly');
     }
 
     /**

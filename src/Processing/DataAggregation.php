@@ -45,7 +45,7 @@ class DataAggregation
             $this->logger->debug('Aggregating data for sensor ', $tmp);
             return $tmp[0]['avg_temp'] ?? null;
         }
-        throw new InvalidArgumentException('Sensor ID is not set correctly');
+        throw new \InvalidArgumentException('Sensor ID is not set correctly');
     }
 
     /**
