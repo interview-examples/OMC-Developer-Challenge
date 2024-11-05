@@ -7,7 +7,6 @@ use App\Sensors\SensorFace;
 use App\Sensors\SensorsOperations;
 use App\Sensors\SensorValidator;
 use DateTime;
-use http\Exception\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use App\DatabaseManagement;
 
@@ -115,7 +114,11 @@ class DataAggregation
         return $result;
     }
 
-    public function createListOfFaultySensors(int $period_duration)
+    /**
+     * @param int $period_duration
+     * @return array
+     */
+    public function createListOfFaultySensors(int $period_duration = 24 * 60 * 60): array
     {
         $critical_time = time() - $period_duration;
 
@@ -127,7 +130,7 @@ class DataAggregation
             ['$set' => ['sensorState' => SensorsOperations::SENSOR_STATE_FAULTY]]
         );
 
-        return $this->db_manager->getSensorsListCollection()->find(
+        $res = $this->db_manager->getSensorsListCollection()->find(
             ['sensorState' => SensorsOperations::SENSOR_STATE_FAULTY],
             ['projection' => [
                 'sensorId' => 1,
@@ -136,6 +139,12 @@ class DataAggregation
                 ]
             ]
         )->toArray();
+
+        foreach ($res as $sensor) {
+            $this->logger->alert('Sensor ' . $sensor['sensorId'] . ' is faulty');
+        }
+
+        return $res;
     }
 
     public function createLastWeekReport(): array

@@ -10,7 +10,6 @@ class SensorsOperations
 {
     public const SENSOR_STATE_FAULTY = false;
     public const SENSOR_STATE_OK = true;
-    public const SENSOR_OUTLIER = true;
     private DatabaseManagement $db_manager;
     private LoggerInterface $logger;
 
@@ -20,7 +19,6 @@ class SensorsOperations
     public function __construct(array $db_access, LoggerInterface $logger)
     {
         $this->logger = $logger;
-
         $this->db_manager = new DatabaseManagement($db_access, $logger);
     }
 
@@ -81,6 +79,11 @@ class SensorsOperations
         throw new \InvalidArgumentException('Sensor ID is not set correctly');
     }
 
+    /**
+     * Adds temperature data to the database for sensor by its ID
+     * @param array $temperature_data
+     * @return bool|null
+     */
     public function addTemperatureData(array $temperature_data): ?bool
     {
         $res = null;
@@ -105,7 +108,7 @@ class SensorsOperations
                     $this->logger->warning("Sensor ID does not exist");
                 }
             } catch (\Exception $e) {
-                $this->logger->error("Error in addTemperatureData method: " . $e->getMessage());
+                $this->logger->critical("Error in addTemperatureData method: " . $e->getMessage());
             }
         }
         return $res;
@@ -120,6 +123,11 @@ class SensorsOperations
         );
     }
 
+    /**
+     * Return sensor data (i.e. stored temperature) by its ID
+     * @param array $sensor_params
+     * @return array
+     */
     public function getSensorDataById(array $sensor_params):array
     {
         if (array_key_exists('sensorId', $sensor_params) &&
@@ -146,6 +154,11 @@ class SensorsOperations
         throw new InvalidArgumentException('Sensor ID is not set correctly');
     }
 
+    /**
+     * Future implementation
+     * @param int $sensor_id
+     * @return string
+     */
     public function getIdBySensorId(int $sensor_id): string
     {
         $sensor = $this->db_manager->getSensorsListCollection()->findOne(['sensorId' => $sensor_id]);
@@ -153,6 +166,12 @@ class SensorsOperations
         return $sensor->_id;
     }
 
+    /**
+     * Removes sensor by its ID
+     *
+     * @param array $sensor_params
+     * @return bool|null
+     */
     public function removeSensorById(array $sensor_params): ?bool
     {
         $res = null;
@@ -168,7 +187,7 @@ class SensorsOperations
                 );
                 $res = true;
             } catch (\Exception $e) {
-                $this->logger->error("Error in removeSensor method: " . $e->getMessage());
+                $this->logger->critical("Error in removeSensor method: " . $e->getMessage());
             }
         } else {
             $this->logger->error("Invalid sensor ID");
