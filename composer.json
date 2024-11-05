@@ -28,6 +28,7 @@
       "monolog/monolog": "^3.7",
       "zircote/swagger-php": "^4.11",
       "twig/twig": "^3.0",
-      "slim/twig-view": "^3.4"
+      "slim/twig-view": "^3.4",
+      "roave/security-advisories": "dev-latest"
     }
 }
