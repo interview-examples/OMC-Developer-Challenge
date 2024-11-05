@@ -16,7 +16,7 @@
     <tr>
         <td>{{ sensor.sensorId }}</td>
         <td>{{ sensor.averageValue }}</td>
-        <td>{{ (sensor.averageValue - sensor.faceAverageValue) / sensor.faceAverageValue * 100  }}</td>
+        <td>{{ ((sensor.averageValue - sensor.faceAverageValue) / sensor.faceAverageValue * 100)|number_format(2, '.', '') }}</td>
     </tr>
     {% endfor %}
 </table>
