@@ -9,27 +9,18 @@ $openapi = OpenApiGenerator::scan(
     [
         __DIR__,
         __DIR__ . '/',
+        __DIR__ . '/../public',
         __DIR__ . '/../src'
     ],
     [
-    'openapi' => '3.0.0',
+    'openapi' => '3.1.0',
     'info' => [
-        'title' => 'My API',
+        'title' => 'OMC Developer Challenge',
         'version' => '1.0',
-    ],
-    'paths' => [
-        '/users' => [
-            'get' => [
-                'summary' => 'Get users',
-                'responses' => [
-                    '200' => [
-                        'description' => 'Users list',
-                    ],
-                ],
-            ],
-        ],
     ],
 ]);
 
 header('Content-Type: application/json');
+readfile(__DIR__ . '/../docs/openapi.yaml');
+
 echo $openapi->toJson();

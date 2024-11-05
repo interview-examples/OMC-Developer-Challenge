@@ -1,1 +1,64 @@
-openapi: 3.0.0
+openapi: 3.1.0
+info:
+  title: OMC Developer Challenge
+  description: API for monitoring temperature sensors in A-Tower
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /sensor-details/:
+    get:
+      summary: Returns details of a sensor by its ID
+      operationId: getSensorDetails
+      tags:
+        - Sensors
+      parameters:
+        - name: sensorId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+  /add-temperature/:
+    post:
+      summary: Adds temperature data to the sensor
+      operationId: addTemperature
+      tags:
+        - Sensors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sensorId:
+                  type: integer
+                temperature:
+                  type: number
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+  /aggregate-hourly/:
+    get:
+      summary: Aggregates temperature data on an hourly basis
+      operationId: aggregateHourly
+      tags:
+        - Aggregation
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
