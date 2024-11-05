@@ -18,10 +18,6 @@ gen
 /tmp/
 *.tmp
 
-# Docker files
-docker-compose.yml
-Dockerfile
-
 # PHPUnit coverage reports
 /coverage/
 
@@ -52,3 +48,6 @@ Dockerfile
 
 # MongoDB
 /data
+
+# RestFOX / Postman
+/restfox

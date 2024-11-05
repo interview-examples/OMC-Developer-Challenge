@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Last Week Temperature Report</title>
+</head>
+<body>
+    <h1>Last Week Temperature Report</h1>
+    <table style="border: darkgrey 2px solid">
+        <tr>
+            <th></th>
+            <th>North</th>
+            <th>West</th>
+            <th>East</th>
+            <th>South</th>
+            <th>Total</th>
+        </tr>
+        {% for day, values in data %}
+            <tr>
+                <th>{{ day }}</th>
+                <td>{{ values['North'] }}</td>
+                <td>{{ values['West'] }}</td>
+                <td>{{ values['East'] }}</td>
+                <td>{{ values['South'] }}</td>
+                <td>{{ values['All'] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

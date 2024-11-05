@@ -8,9 +8,12 @@ Your goal is to design and implement a system which helps Alina with monitoring 
 sensors and keeping track of the
 average hourly temperature for each face of the building (north, east, south, west).
 ## Specification
-Sensors may be added or removed at any time. Sensor without sampling data in the past 24
+Sensors may be added or removed at any time. 
+Sensor without sampling data in the past 24
 hours is considered as removed.
+
 The expected number of sensors is: 10000
+
 Each sensor has a temperature sampling rate of 1 sample per second.
 Information sent by sensors is a json payload composed of the following fields:
 - timestamp: unix timestamp (integer)

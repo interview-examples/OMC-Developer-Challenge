@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Deviated Sensors for {{ sensor_face|upper }} side</title>
+</head>
+<body>
+<h1>Deviated Sensors list</h1>
+<h2>for {{ sensor_face|upper }} side</h2>
+<table style="border: darkgrey 2px solid">
+    <tr>
+        <th>Id</th>
+        <th>Average Temperature</th>
+        <th>Deviation (%)</th>
+    </tr>
+    {% for sensor in sensors %}
+    <tr>
+        <td>{{ sensor.sensorId }}</td>
+        <td>{{ sensor.averageValue }}</td>
+        <td>{{ ((sensor.averageValue - sensor.faceAverageValue) / sensor.faceAverageValue * 100)|number_format(2, '.', '') }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Sensor Details</title>
+</head>
+<body>
+<h1>Broken Sensors List</h1>
+<table style="border: darkgrey 2px solid">
+    <tr>
+        <th>Id</th>
+        <th>Face</th>
+        <th>Last Update</th>
+    </tr>
+    {% for sensor in sensors %}
+    <tr>
+        <td>{{ sensor.sensorId }}</td>
+        <td>{{ sensor.sensorFace }}</td>
+        <td>{{ sensor.sensorLastUpdate | date('Y-m-d H:i:s')  }}</td>
+    </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
