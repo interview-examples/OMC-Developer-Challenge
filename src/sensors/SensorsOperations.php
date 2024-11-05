@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Sensors;
 
-use http\Exception\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use App\DatabaseManagement;
 
@@ -79,7 +78,7 @@ class SensorsOperations
             }
             return $res;
         }
-        throw new InvalidArgumentException('Sensor ID is not set correctly');
+        throw new \InvalidArgumentException('Sensor ID is not set correctly');
     }
 
     public function addTemperatureData(array $temperature_data): ?bool
