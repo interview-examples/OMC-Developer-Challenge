@@ -13,7 +13,7 @@
          "psr-4": {
            "App\\": "src/",
            "App\\Sensors\\": "src/sensors/",
-           "App\\Processing\\": "src/processing/"
+           "App\\Processing\\": "src/Processing/"
          }
     },
     "require-dev": {

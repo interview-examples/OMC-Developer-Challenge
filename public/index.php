@@ -1,19 +1,22 @@
 <?php
 declare(strict_types=1);
 
+use App\Controllers\AggregationController;
+use App\Controllers\ReportController;
+use App\Controllers\SensorController;
+use App\DatabaseManagement as DBManagement;
+use App\Processing\DataAggregation;
+use App\Sensors\SensorFace;
+use App\Sensors\SensorValidator;
+use App\Sensors\SensorsOperations;
+use DI\Container;
 use OpenApi\Annotations as OA;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
-use DI\Container;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 use Twig\Loader\FilesystemLoader;
-use App\DatabaseManagement as DBManagement;
-use App\Sensors\SensorFace;
-use App\Sensors\SensorValidator;
-use App\Sensors\SensorsOperations;
-use App\Processing\DataAggregation;
 
 require __DIR__ . '/../vendor/autoload.php';
 $settings = require __DIR__ . '/../src/settings.php';
@@ -21,17 +24,57 @@ $settings = require __DIR__ . '/../src/settings.php';
 $container = new Container();
 $container->set('logger', $settings['logger']);
 $container->set('db_access', $settings['db_access']);
-$container->set(Twig\Loader\LoaderInterface::class, function() {
+$container->set(Twig\Loader\LoaderInterface::class, function()
+{
     return new FilesystemLoader(__DIR__ . '/../templates');
 });
-$container->set(Twig::class, function($container) {
+$container->set(Twig::class, function($container)
+{
     return new Twig($container->get(Twig\Loader\LoaderInterface::class), ['cache' => false]);
+});
+$container->set(DataAggregation::class, function ($c)
+{
+    return new DataAggregation($c->get('db_access'), $c->get('logger'));
+});
+$container->set(ReportController::class, function($container)
+{
+    return new ReportController(
+        $container->get(DataAggregation::class),
+        $container->get(Twig::class)
+    );
+});
+$container->set(SensorsOperations::class, function($container)
+{
+    return new SensorsOperations(
+        $container->get('db_access'),
+        $container->get('logger')
+    );
+});
+$container->set(SensorController::class, function($container)
+{
+    return new SensorController(
+        $container->get(SensorsOperations::class),
+        $container->get(Twig::class)
+    );
+});
+$container->set(AggregationController::class, function($container)
+{
+    return new AggregationController(
+        $container->get(DataAggregation::class),
+        $container->get(Twig::class)
+    );
+});
+$container->set('settings', function () {
+    return require __DIR__ . '/../src/settings.php';
 });
 $twig = $container->get(Twig::class);
 
 AppFactory::setContainer($container);
 
 SensorValidator::setContainer($container);
+
+$app = AppFactory::create();
+$app->add(TwigMiddleware::createFromContainer($app, Twig::class));
 
 /**
  * @OA\Info(
@@ -40,10 +83,6 @@ SensorValidator::setContainer($container);
  * )
  * @OA\PathItem(path="/")
  */
-
-$app = AppFactory::create();
-$app->add(TwigMiddleware::createFromContainer($app, Twig::class));
-
 $app->get('/swagger.php', function (Request $request, Response $response, $args) {
     require __DIR__ . '/../public/swagger.php';
     return $response;
@@ -89,35 +128,7 @@ $app->get('/',
  *     )
  * )
  */
-$app->post('/sensor-details/',
-    function (Request $request, Response $response, $args) use ($container): Response
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = json_decode($request->getBody()->getContents(), true);
-        if (is_null($data)) {
-            $response->getBody()->write("Invalid sensor details");
-            return $response->withStatus(400);
-        }
-
-        $sensor_details = [
-            'sensorId' => $data['sensorId'] ?? null,
-            'sensorFace' => $data['sensorFace'] ?? null,
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        if ($sensor->registerSensor($sensor_details)) {
-            $response->getBody()->write('Sensor ' . $data["sensorId"] . ' registered successfully.');
-        } else {
-            $response->getBody()->write("Invalid sensor details or Sensor already exists");
-            $response = $response->withStatus(400);
-        }
-
-        return $response;
-    }
-);
-
+$app->post('/sensor-details/', [SensorController::class, 'registerSensor']);
 /**
  * @OA\GET(
  *     path="/sensor-details/",
@@ -127,34 +138,7 @@ $app->post('/sensor-details/',
  *     )
  * )
  */
-$app->get('/sensor-details/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-
-        $sensor_details = [
-            'sensorId' => $data['sensorId'] ?? null,
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        $res = $sensor->getSensorDetailsById($sensor_details);
-
-        if (!is_null($res)) {
-            $res['sensorFace'] = getSensorFaceName((int)($res['sensorFace'] ?? 0));
-            $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
-            $response->getBody()->write('<br/>');
-            $response->getBody()->write(print_r($res, true));
-        } else {
-            $response->getBody()->write('Sensor ' . $data["sensorId"] . ' not registered.');
-        }
-
-        return $response;
-    }
-);
-
+$app->get('/sensor-details/', [SensorController::class, 'getSensorDetails']);
 /**
  * @OA\GET(
  *     path="/html/sensor-details/",
@@ -164,112 +148,10 @@ $app->get('/sensor-details/',
  *     )
  * )
  */
-$app->get('/html/sensor-details/',
-    function (Request $request, Response $response, $args) use ($container, $twig)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-        $sensor_details = [
-            'sensorId' => $data['sensorId'] ?? null,
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        $sensor_res = $sensor->getSensorDetailsById($sensor_details);
-
-        if (!is_null($sensor_res)) {
-            $sensor_res['sensorFace'] = getSensorFaceName((int)($sensor_res['sensorFace'] ?? 0));
-            $sensor_res['sensorLastUpdate'] = date('Y-m-d H:i:s', $sensor_res['sensorLastUpdate']);
-            $res = $twig->render($response, 'sensor_details.twig', $sensor_res);
-        } else {
-            $response->getBody()->write('Sensor ' . $data["sensorId"] . ' not registered.');
-            $res = $response;
-        }
-        return $res;
-    }
-);
-
-$app->delete('/remove-sensor/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-
-        $sensor_details = [
-            'sensorId' => $data['sensorId'] ?? null,
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        $res = $sensor->removeSensorById($sensor_details);
-
-        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
-        if ($res) {
-            $response->getBody()->write('<br/>');
-            $response->getBody()->write('Sensor removed successfully');
-        } else {
-            $response->getBody()->write('<br/>');
-            $response->getBody()->write('Sensor not found');
-        }
-
-        return $response;
-    }
-);
-
-$app->post('/add-temperature/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = json_decode($request->getBody()->getContents(), true);
-        if (is_null($data)) {
-            $response->getBody()->write("Invalid temperature data");
-            return $response->withStatus(400);
-        }
-
-        $temperature_data = [
-            'sensorId' => $data['sensorId'] ?? null,
-            'temperature' => $data['temperature'] ?? null,
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        if ($sensor->addTemperatureData($temperature_data)) {
-            $response->getBody()->write('Temperature data added successfully.');
-        } else {
-            $response->getBody()->write("Invalid temperature data or Sensor ID does not exist");
-            $response = $response->withStatus(400);
-        }
-
-        return $response;
-    }
-);
-
-$app->get('/sensor-data/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-        $sensor_details = [
-            'sensorId' => $data['sensorId'] ?? null,
-        ];
-
-        $sensor = new SensorsOperations($db_access, $logger);
-        $res = $sensor->getSensorDataById($sensor_details);
-
-        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
-        if (!is_null($res)) {
-            $response->getBody()->write('<br/>');
-            $response->getBody()->write(print_r($res, true));
-        }
-
-        return $response;
-    }
-);
+$app->get('/html/sensor-details/', [SensorController::class, 'getSensorDetailsHtml']);
+$app->delete('/remove-sensor/', [SensorController::class, 'removeSensor']);
+$app->post('/add-temperature/', [SensorController::class, 'addTemperature']);
+$app->get('/sensor-data/', [SensorController::class, 'getSensorData']);
 
 /**
  * @OA\Get(
@@ -294,122 +176,10 @@ $app->get('/setup-database/',
     }
 );
 
-$app->get('/aggregate-by-sensor/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-        $sensor_id = (int)($data['sensorId'] ?? 0);
-        $start_from = (int)($data['start_from'] ?? 0);
-        $period = (int)($data['period'] ?? 0);
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $avg_temp = $sensor->aggregateDataSensorByID($sensor_id, $start_from, $period);
-
-        $response->getBody()->write('Sensor ' . $data["sensorId"] . ':');
-        if (!is_null($avg_temp)) {
-            $response->getBody()->write('<br/>');
-            $response->getBody()->write(number_format($avg_temp, 2));
-        }
-
-        return $response;
-    }
-);
-
-$app->get('/aggregate-by-face/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-        $start_from = (int)($data['start_from'] ?? 0);
-        $period = (int)($data['period'] ?? 0);
-        $avg_temp = null;
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $sensor_face_tmp = (int)($data['sensorFace'] ?? 0);
-        $sensor_face_value = SensorFace::tryfrom($sensor_face_tmp);
-        if (is_null($sensor_face_value)) {
-            $response->getBody()->write("Invalid sensor face");
-            $response->withStatus(400);
-        } else {
-            $avg_temp = $sensor->aggregateDataSensorsByFace($sensor_face_value, $start_from, $period);
-
-            $response->getBody()->write('Face ' . strtoupper(getSensorFaceName($sensor_face_tmp)). ':');
-        }
-        if (!is_null($avg_temp)) {
-            $response->getBody()->write('<br/>');
-            $response->getBody()->write(number_format($avg_temp, 2));
-        }
-
-        return $response;
-    }
-);
-
-$app->get('/broken-sensors/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $res = $sensor->createListOfFaultySensors((int)($data['period_duration'] ?? 0));
-        $response->getBody()->write(json_encode($res));
-
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-);
-
 $app->get('/html/broken-sensors/',
     function (Request $request, Response $response) use ($twig)
     {
         return $twig->render($response, 'broken_sensors_input_params.twig');
-    }
-);
-
-$app->get('/html/broken-sensors-response/',
-    function (Request $request, Response $response) use ($container, $twig)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $res = $sensor->createListOfFaultySensors((int)($data['period_duration'] ?? 0));
-
-        return $twig->render($response, 'broken_sensors.twig', ['sensors' => $res]);
-    }
-);
-
-$app->get('/deviation-sensors/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-        $start_from = (int)($data['start_from'] ?? 0);
-        $period = (int)($data['period'] ?? 0);
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $sensor_face_tmp = (int)($data['sensorFace'] ?? 0);
-        $sensor_face_value = SensorFace::tryfrom($sensor_face_tmp);
-        if (is_null($sensor_face_value)) {
-            $response->getBody()->write("Invalid sensor face");
-            $response->withStatus(400);
-        } else {
-            $res = $sensor->createListOfSensorsWithDeviation($sensor_face_value, $start_from, $period);
-
-            $response->getBody()->write(json_encode($res));
-        }
-
-        return $response;
     }
 );
 
@@ -420,73 +190,8 @@ $app->get('/html/deviated-sensors/',
     }
 );
 
-$app->get('/html/deviated-sensors-response/',
-    function (Request $request, Response $response) use ($container, $twig)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-        $start_from = (int)($data['start_from'] ?? 0);
-        $period = (int)($data['period'] ?? 0);
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $sensor_face_tmp = (int)($data['sensor_face'] ?? 0);
-        $sensor_face_value = SensorFace::tryfrom($sensor_face_tmp);
-        if (is_null($sensor_face_value)) {
-            $response->getBody()->write("Invalid Sensor Face value");
-            $response->withStatus(400);
-        } else {
-            $res = $sensor->createListOfSensorsWithDeviation($sensor_face_value, $start_from, $period);
-
-            $response = $twig->render($response, 'deviated_sensors.twig', ['sensor_face' => getSensorFaceName($sensor_face_tmp), 'sensors' => $res]);
-        }
-
-        return $response;
-    }
-);
-
-$app->get('/lastweek-report/',
-    function (Request $request, Response $response, $args) use ($container)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $res = $sensor->createLastWeekReport();
-        $response->getBody()->write(json_encode($res));
-
-        return $response->withHeader('Content-Type', 'application/json');
-    }
-);
-
-$app->get('/html/lastweek-report/',
-    function (Request $request, Response $response, $args) use ($container, $twig)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $res = $sensor->createLastWeekReport();
-        $response = $twig->render($response, 'last_week_report.twig', ['data' => $res]);
-
-        return $response;
-    }
-);
-
-$app->get('/aggregate-hourly/', function (Request $request, Response $response, $args) use ($container) {
-    $logger = $container->get('logger');
-    $db_access = $container->get('db_access');
-
-    $data = $request->getQueryParams();
-    $start_from = (int)($data['start_from'] ?? 0);
-
-    $sensor = new DataAggregation($db_access, $logger);
-    $res = $sensor->createHourlyAggregatedReport($start_from);
-
-    $response->getBody()->write(json_encode($res));
-    return $response->withHeader('Content-Type', 'application/json');
-});
+$app->get('/lastweek-report/', [ReportController::class, 'getLastWeekReportJson']);
+$app->get('/html/lastweek-report/', [ReportController::class, 'getLastWeekReportHtml']);
 
 $app->get('/html/aggregate-hourly/',
     function (Request $request, Response $response) use ($twig)
@@ -495,22 +200,14 @@ $app->get('/html/aggregate-hourly/',
     }
 );
 
-$app->get('/html/aggregate-hourly-response/',
-    function (Request $request, Response $response) use ($container, $twig)
-    {
-        $logger = $container->get('logger');
-        $db_access = $container->get('db_access');
-
-        $data = $request->getQueryParams();
-        $start_from = (int)($data['start_from'] ?? 0);
-
-        $sensor = new DataAggregation($db_access, $logger);
-        $res = $sensor->createHourlyAggregatedReport($start_from);
-
-        return $twig->render($response, 'aggregate_hourly.twig', ['data' => $res]);
-    }
-);
-
+$app->get('/aggregate-by-sensor/', [AggregationController::class, 'aggregateBySensor']);
+$app->get('/aggregate-by-face/', [AggregationController::class, 'aggregateByFace']);
+$app->get('/broken-sensors/', [AggregationController::class, 'listBrokenSensors']);
+$app->get('/html/broken-sensors-response/', [AggregationController::class, 'listBrokenSensorsHtml']);
+$app->get('/deviation-sensors/', [AggregationController::class, 'listDeviatedSensors']);
+$app->get('/html/deviated-sensors-response/', [AggregationController::class, 'listDeviatedSensorsHtml']);
+$app->get('/aggregate-hourly/', [AggregationController::class, 'aggregateHourly']);
+$app->get('/html/aggregate-hourly-response/', [AggregationController::class, 'aggregateHourlyHtml']);
 /**
  * Test endpoints =============================
  */

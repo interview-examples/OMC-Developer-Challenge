@@ -18,10 +18,6 @@ gen
 /tmp/
 *.tmp
 
-# Docker files
-docker-compose.yml
-Dockerfile
-
 # PHPUnit coverage reports
 /coverage/
 
