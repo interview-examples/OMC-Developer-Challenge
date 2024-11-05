@@ -83,14 +83,14 @@ $app->add(TwigMiddleware::createFromContainer($app, Twig::class));
  * )
  * @OA\PathItem(path="/")
  */
-$app->get('/swagger.php', function (Request $request, Response $response, $args) {
+$app->get('/swagger.php', function (Request $request, Response $response)
+{
     require __DIR__ . '/../public/swagger.php';
     return $response;
 });
 $app->get('/docs/', function ($request, $response) use ($container)
 {
     $twig = $container->get(Twig::class);
-
     return $twig->render($response, 'swagger.twig');
 });
 

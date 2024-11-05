@@ -9,11 +9,15 @@ class SensorValidator
 {
     private static $logger;
 
-    public static function setContainer(ContainerInterface $container)
+    public static function setContainer(ContainerInterface $container): void
     {
         self::$logger = $container->get('logger');
     }
 
+    /**
+     * @param $sensor_details
+     * @return bool
+     */
     public static function validateSensorDetails(&$sensor_details): bool
     {
         if (!is_array($sensor_details)) {
@@ -31,8 +35,6 @@ class SensorValidator
 
         $sensor_details = array_intersect_key($sensor_details, $required_keys);
 
-        self::$logger->debug("modified", ["sensorDetails" => $sensor_details]);
-
         return self::validateSensorId($sensor_details['sensorId']) &&
             self::validateSensorFace($sensor_details['sensorFace']);
     }
@@ -41,7 +43,6 @@ class SensorValidator
     {
         $res = filter_var($sensor_id, FILTER_VALIDATE_INT) !== false &&
             $sensor_id >= 10000 && $sensor_id <= 99999;
-        self::$logger->debug("validateSensorId:", ["sensorId" => $sensor_id, "result" => $res]);
 
         return $res;
     }
@@ -54,7 +55,6 @@ class SensorValidator
             $res=SensorFace::tryFrom($sensor_face) !== null ||
                 in_array($sensor_face, array_column(SensorFace::cases(), 'value'), true);
         }
-        self::$logger->debug("validateSensorFace:", ["sensorFace" => $sensor_face, "result" => $res]);
 
         return $res;
     }
@@ -62,15 +62,12 @@ class SensorValidator
     public static function validateSensorState($sensor_state): bool
     {
         $res=in_array($sensor_state, [true, false, 1, 0, "1", "0"], true);
-        self::$logger->debug("validateSensorState:", ["sensorState" => $sensor_state, "result" => $res]);
 
         return $res;
     }
 
     public static function validateTemperatureData(array $temperature_data)
     {
-        self::$logger->debug("SensorValidator::validateTemperatureData():input", ["sensorDetails" => $temperature_data]);
-
         if (!is_array($temperature_data)) {
             $temperature_data = [];
         }
